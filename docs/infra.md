@@ -68,25 +68,65 @@ These types are constrained in the IAM policy (`iam/app-role-policy.json`) — t
 
 ### Spot interruption handling
 
+Each EC2 agent runs a **spot monitor** alongside the agent wrapper. It polls the instance metadata service for interruption notices:
+
+```bash
+#!/bin/bash
+# spot-monitor.sh — runs alongside the agent wrapper
+WRAPPER_PID=$1
+
+while true; do
+  # AWS provides 2-minute warning via instance metadata
+  HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+    http://169.254.169.254/latest/meta-data/spot/instance-action)
+
+  if [ "$HTTP_CODE" -eq 200 ]; then
+    echo "Spot interruption detected — sending SIGTERM to wrapper"
+    kill -TERM "$WRAPPER_PID"
+    break
+  fi
+  sleep 5
+done
+```
+
+When SIGTERM reaches the agent wrapper, it triggers graceful shutdown:
+
 ```typescript
-// When spot interruption notice received (2-minute warning):
-async function handleSpotInterruption(instanceId: string) {
-  const resource = await db.resources.findByInstanceId(instanceId);
-  const session = await db.claude_sessions.findRunning(resource.id);
+// Inside the agent wrapper (see architecture.md for full wrapper design):
+process.on('SIGTERM', async () => {
+  // Inject urgent message into Claude Code session
+  await session.sendMessage(
+    'URGENT: This instance is being terminated in 2 minutes. ' +
+    'Commit all work-in-progress NOW. ' +
+    'Run: git add -A && git commit -m "WIP: spot interruption" && git push'
+  );
 
-  if (session) {
-    // Signal agent to commit WIP
-    await signalAgent(session, 'COMMIT_WIP');
+  // Wait up to 90s for git push
+  await session.waitForCompletion({ timeout: 90_000 });
 
-    // Wait up to 90 seconds for WIP commit
-    await waitForWipCommit(session, 90_000);
-  }
+  // Report to app
+  await fetch(`${APP_URL}/api/agent/error`, {
+    method: 'POST',
+    body: JSON.stringify({
+      taskId,
+      error: 'Spot interruption — WIP committed and pushed',
+      retriable: true,
+    }),
+  });
 
-  // Mark resource as interrupted
-  await db.resources.update(resource.id, { status: 'interrupted' });
+  process.exit(0);
+});
+```
 
-  // Re-provision on-demand
-  await spawnOnDemand(session.task_id);
+The app then re-provisions on-demand:
+
+```typescript
+async function handleSpotInterruption(taskId: number) {
+  const task = await db.tasks.find(taskId);
+  await db.resources.update(task.resource_id, { status: 'interrupted' });
+
+  // Re-provision as on-demand (no more spot for this task)
+  await spawnOnDemand(task.id);
 }
 ```
 

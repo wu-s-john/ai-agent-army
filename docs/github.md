@@ -301,14 +301,19 @@ async function handleReviewComment(payload: PrReviewCommentPayload) {
 
   if (!session || session.status !== 'running') return;
 
-  // Forward the review comment to the agent
-  await forwardToAgent(session, {
-    type: 'pr_review_comment',
-    from: comment.user.login,
+  // Write to agent_messages table
+  // Agent wrapper polls GET /api/agent/:id/messages every 2s
+  await db.agent_messages.create({
+    session_id: session.id,
+    source: 'github',
+    sender: comment.user.login,
     body: comment.body,
-    path: comment.path,
-    line: comment.line,
-    diff_hunk: comment.diff_hunk,
+    metadata: {
+      type: 'pr_review_comment',
+      path: comment.path,
+      line: comment.line,
+      diff_hunk: comment.diff_hunk,
+    },
   });
 }
 
@@ -321,11 +326,17 @@ async function handleCheckSuite(payload: CheckSuitePayload) {
     const session = await db.claude_sessions.findByBranch(branch);
 
     if (session && session.status === 'running') {
-      await forwardToAgent(session, {
-        type: 'ci_failure',
-        branch,
-        conclusion: check_suite.conclusion,
-        url: check_suite.url,
+      await db.agent_messages.create({
+        session_id: session.id,
+        source: 'github',
+        sender: 'ci',
+        body: `CI checks failed on branch ${branch}. See: ${check_suite.url}`,
+        metadata: {
+          type: 'ci_failure',
+          branch,
+          conclusion: check_suite.conclusion,
+          url: check_suite.url,
+        },
       });
     }
   }

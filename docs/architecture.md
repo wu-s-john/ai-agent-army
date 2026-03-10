@@ -14,7 +14,7 @@ The system receives tasks from Linear (via labels and comments), provisions or d
      │          │          │                                      │
      ▼          ▼          ▼                                      │
 ┌─────────────────────────────┐                                   │
-│         APP (Fastify)       │                                   │
+│       APP (Next.js)         │                                   │
 │  Vercel serverless / VPS    │                                   │
 │                             │                                   │
 │  ┌──────────┐ ┌──────────┐ │                                   │
@@ -119,7 +119,7 @@ Any comment while an agent is running is forwarded as feedback. See [linear.md](
 
 | Component | Technology |
 |---|---|
-| App server | TypeScript / Fastify (Vercel serverless or VPS) |
+| App server | Next.js on Vercel (serverless API routes) |
 | Database | Postgres (Vercel Postgres or RDS) |
 | Compute (cloud) | AWS EC2 — Graviton ARM64 (t4g, c7g) + macOS (mac2) |
 | Compute (personal) | Laptops, desktops, remote servers running worker daemon |
@@ -229,6 +229,13 @@ Offline handling: task queued → Slack notification → dispatched when device 
 | POST | `/api/agent/complete` | Task completed successfully |
 | POST | `/api/agent/error` | Task failed |
 
+### Agent Messaging (app ↔ agent communication)
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/api/agent/:id/message` | Send a message to a running agent (from Linear, Slack, dashboard) |
+| GET | `/api/agent/:id/messages` | Agent polls for new messages (every 2s) |
+| GET | `/api/agent/:id/status` | Query agent's current status and context |
+
 ### Worker Daemon (personal devices)
 | Method | Path | Purpose |
 |---|---|---|
@@ -259,6 +266,77 @@ Offline handling: task queued → Slack notification → dispatched when device 
 | POST | `/api/webhooks/github` | PR reviews, comments, check statuses |
 
 Agents interact with GitHub using a Personal Access Token (or GitHub App installation token) with `repo` scope. This single token covers all git and GitHub operations. See [github.md](github.md) for full GitHub API usage.
+
+## Agent Wrapper
+
+Agents don't run `claude` CLI directly. A thin TypeScript wrapper (`agent-wrapper`) manages the Claude Code session and handles all communication with the app. This solves three problems:
+
+1. **Feedback forwarding**: how Linear/Slack messages reach a running agent
+2. **Progress reporting**: how Claude Code output gets POSTed to the app
+3. **Graceful shutdown**: how spot interruptions and stop commands work
+
+```
+┌─────────────────────────────────────────────┐
+│              Agent Wrapper                   │
+│                                              │
+│  ┌──────────────────────────────────────┐   │
+│  │         Claude Code SDK Session       │   │
+│  │                                       │   │
+│  │  ← injects messages (feedback,       │   │
+│  │     review comments, commands)        │   │
+│  │                                       │   │
+│  │  → emits events (tool use, output,    │   │
+│  │     completion, errors)               │   │
+│  └──────────────────────────────────────┘   │
+│                    ▲  │                      │
+│                    │  ▼                      │
+│  ┌─────────────┐  ┌─────────────────┐       │
+│  │ Message      │  │ Progress        │       │
+│  │ Poller       │  │ Reporter        │       │
+│  │              │  │                 │       │
+│  │ GET /agent/  │  │ POST /agent/    │       │
+│  │ :id/messages │  │ progress        │       │
+│  │ every 2s     │  │ on events       │       │
+│  └─────────────┘  └─────────────────┘       │
+│                                              │
+│  ┌──────────────────────────────────────┐   │
+│  │ Signal Handler (SIGTERM)              │   │
+│  │ → tells Claude to commit WIP + push   │   │
+│  └──────────────────────────────────────┘   │
+└─────────────────────────────────────────────┘
+```
+
+### Message flow (feedback → agent)
+
+```
+1. Human comments on Linear issue: "use postgres not redis"
+2. Linear webhook → app → POST /api/agent/7/message
+3. App writes message to agent_messages table
+4. Wrapper polls GET /api/agent/7/messages → gets new message
+5. Wrapper injects into Claude Code session:
+   "[Human feedback]: use postgres not redis"
+6. Claude Code reads it and adjusts implementation
+```
+
+### Progress flow (agent → app)
+
+```
+1. Claude Code uses a tool (edits file, runs test, etc.)
+2. Wrapper receives event from Claude Code SDK
+3. Wrapper POSTs to /api/agent/progress
+4. App updates Postgres → Linear properties → Slack channel
+```
+
+### Graceful shutdown
+
+```
+1. Spot interruption / stop command → SIGTERM sent to wrapper
+2. Wrapper injects urgent message:
+   "URGENT: Commit all work-in-progress NOW and push."
+3. Wrapper waits up to 90s for git push
+4. Wrapper calls POST /api/agent/complete (or /error)
+5. Process exits
+```
 
 ## Bootstrap & Instance Setup
 

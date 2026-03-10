@@ -176,6 +176,27 @@ CREATE INDEX idx_sessions_resource ON claude_sessions(resource_id);
 CREATE INDEX idx_sessions_status ON claude_sessions(status);
 ```
 
+### agent_messages
+
+Messages sent to a running agent (from Linear comments, Slack messages, PR reviews, dashboard).
+The agent wrapper polls for unread messages and injects them into the Claude Code session.
+
+```sql
+CREATE TABLE agent_messages (
+  id              SERIAL PRIMARY KEY,
+  session_id      INTEGER NOT NULL REFERENCES claude_sessions(id),
+  source          TEXT NOT NULL,          -- 'linear', 'slack', 'github', 'dashboard', 'system'
+  sender          TEXT,                   -- username or system identifier
+  body            TEXT NOT NULL,
+  metadata        JSONB DEFAULT '{}',    -- source-specific data (PR path, line number, etc.)
+  delivered       BOOLEAN DEFAULT false,  -- true once agent wrapper has polled it
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_agent_messages_session ON agent_messages(session_id);
+CREATE INDEX idx_agent_messages_undelivered ON agent_messages(session_id, delivered) WHERE delivered = false;
+```
+
 ### skills
 
 Agent capabilities. Each skill injects a system prompt section.

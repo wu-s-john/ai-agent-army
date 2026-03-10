@@ -139,11 +139,62 @@ async function handleComment(data: LinearCommentData) {
       break;
 
     case 'feedback':
-      // anything else → forward to running agent
-      await forwardFeedback(job, body);
+      // anything else → write to agent_messages table
+      // The agent wrapper polls GET /api/agent/:id/messages and injects it
+      await forwardFeedback(job, body, userId);
       break;
   }
 }
+
+async function forwardFeedback(job: Job, body: string, userId: string) {
+  // Find the running session for this job
+  const session = await db.claude_sessions.findRunningByJob(job.id);
+  if (!session) return;
+
+  // Write to agent_messages table
+  // The agent wrapper polls GET /api/agent/:id/messages every 2s
+  // and injects new messages into the Claude Code session
+  const user = await linear.user(userId);
+  await db.agent_messages.create({
+    session_id: session.id,
+    source: 'linear',
+    sender: user.name,
+    body,
+  });
+}
+```
+
+### Message delivery endpoint
+
+```typescript
+// GET /api/agent/:id/messages — polled by agent wrapper every 2s
+app.get('/api/agent/:id/messages', async (req, reply) => {
+  const sessionId = req.params.id;
+
+  const messages = await db.agent_messages.findUndelivered(sessionId);
+
+  // Mark as delivered
+  if (messages.length > 0) {
+    await db.agent_messages.markDelivered(messages.map(m => m.id));
+  }
+
+  reply.send({ messages });
+});
+
+// POST /api/agent/:id/message — used by Linear, Slack, GitHub webhooks, dashboard
+app.post('/api/agent/:id/message', async (req, reply) => {
+  const { source, sender, body, metadata } = req.body;
+
+  await db.agent_messages.create({
+    session_id: req.params.id,
+    source,
+    sender,
+    body,
+    metadata,
+  });
+
+  reply.send({ ok: true });
+});
 ```
 
 ## Custom Properties

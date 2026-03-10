@@ -204,7 +204,7 @@ await slack.chat.postMessage({
 
 ### Slack → Agent
 
-Messages posted in an agent's channel are forwarded to the running agent:
+Messages posted in an agent's channel are written to the `agent_messages` table. The agent wrapper polls for new messages and injects them into the Claude Code session.
 
 ```typescript
 // Subscribe to message events in agent channels
@@ -215,11 +215,16 @@ app.post('/api/slack/events', async (req, reply) => {
   if (event.type === 'message' && !event.bot_id) {
     const agent = await findAgentByChannel(event.channel);
     if (agent && agent.status === 'running') {
-      await forwardToAgent(agent, {
-        from: 'slack',
-        user: event.user,
-        text: event.text,
-        channel: event.channel,
+      // Look up Slack username
+      const userInfo = await slack.users.info({ user: event.user });
+
+      // Write to agent_messages table
+      // Agent wrapper polls GET /api/agent/:id/messages every 2s
+      await db.agent_messages.create({
+        session_id: agent.sessionId,
+        source: 'slack',
+        sender: userInfo.user.real_name,
+        body: event.text,
       });
     }
   }

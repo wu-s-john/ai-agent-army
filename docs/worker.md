@@ -85,8 +85,13 @@ Content-Type: application/json
   "capabilities": {
     "os": "darwin",
     "arch": "arm64",
-    "memory": 32768,
+    "totalMemoryMB": 32768,
     "gpu": true
+  },
+  "system": {                          // live stats for admission control
+    "memoryFreeMB": 12800,
+    "cpuLoadAvg": 2.1,
+    "diskFreeGB": 45
   }
 }
 
@@ -95,7 +100,27 @@ Content-Type: application/json
 { "ok": true }
 ```
 
-The app updates `last_heartbeat` in the `resources` table. A device is considered **online** if its last heartbeat is < 2 minutes old.
+The app updates `last_heartbeat` and `capabilities` in the `resources` table. A device is considered **online** if its last heartbeat is < 2 minutes old.
+
+### Admission control
+
+The app checks live system stats before assigning tasks:
+
+```typescript
+async function canAcceptTask(device: Resource): boolean {
+  const activeSessions = await db.claude_sessions.countActive(device.id);
+
+  // Hard limit from config
+  if (activeSessions >= device.capabilities.maxSessions) return false;
+
+  // Memory check: each Claude Code session uses ~2-4 GB
+  const memPerSession = 3 * 1024; // 3 GB in MB
+  const freeMemory = device.capabilities.system?.memoryFreeMB ?? 0;
+  if (freeMemory < memPerSession) return false;
+
+  return true;
+}
+```
 
 ### Task polling
 
@@ -180,7 +205,7 @@ When a device comes back online (heartbeat resumes):
 
 ## Task Execution
 
-When the worker receives a task from polling:
+When the worker receives a task from polling, it starts the **agent wrapper** — a thin TypeScript process that manages Claude Code via the SDK and handles all communication with the app.
 
 ```typescript
 async function executeTask(task: WorkerTask) {
@@ -192,22 +217,105 @@ async function executeTask(task: WorkerTask) {
   // 2. Configure git
   await configureGit(workDir, task);
 
-  // 3. Report ready
-  await reportReady(task);
-
-  // 4. Start Zellij session
+  // 3. Start Zellij session
   const sessionName = `agent-${task.jobId}-task-${task.id}`;
   await startZellijSession(sessionName, workDir);
 
-  // 5. Launch Claude Code in Zellij
-  await launchClaudeCode(sessionName, {
-    systemPrompt: task.systemPrompt,
+  // 4. Start agent wrapper (runs Claude Code via SDK)
+  const wrapper = new AgentWrapper({
+    taskId: task.id,
+    sessionId: task.sessionId,
+    appUrl: APP_URL,
+    authToken: AUTH_TOKEN,
     model: task.model,
+    systemPrompt: task.systemPrompt,
     workDir,
+    zellijSession: sessionName,
   });
 
-  // 6. Monitor process, report progress
-  await monitorSession(sessionName, task);
+  // 5. Wrapper handles everything:
+  //    - Starts Claude Code session via SDK
+  //    - Reports ready to app
+  //    - Polls for messages (feedback, commands) every 2s
+  //    - Injects messages into Claude Code session
+  //    - Reports progress on tool use events
+  //    - Reports completion/error on exit
+  //    - Handles SIGTERM for graceful shutdown
+  await wrapper.run();
+}
+```
+
+### Agent wrapper internals
+
+```typescript
+class AgentWrapper {
+  private session: ClaudeCodeSession;
+  private messagePoller: NodeJS.Timeout;
+
+  async run() {
+    // Start Claude Code via SDK
+    this.session = await ClaudeCode.startSession({
+      model: this.config.model,
+      systemPrompt: this.config.systemPrompt,
+      workDir: this.config.workDir,
+    });
+
+    // Report ready
+    await this.post('/api/agent/ready', {
+      taskId: this.config.taskId,
+      resourceName: DEVICE_NAME,
+    });
+
+    // Poll for inbound messages (Linear comments, Slack, PR reviews)
+    this.messagePoller = setInterval(() => this.pollMessages(), 2000);
+
+    // Listen for Claude Code events
+    this.session.on('toolUse', (event) => {
+      this.post('/api/agent/progress', {
+        taskId: this.config.taskId,
+        status: 'running',
+        summary: `${event.tool}: ${event.description}`,
+      });
+    });
+
+    // Handle graceful shutdown (spot interruption, stop command)
+    process.on('SIGTERM', () => this.handleShutdown());
+
+    // Wait for completion
+    const result = await this.session.waitForCompletion();
+
+    clearInterval(this.messagePoller);
+    await this.post('/api/agent/complete', {
+      taskId: this.config.taskId,
+      result,
+    });
+  }
+
+  private async pollMessages() {
+    const { messages } = await this.get(
+      `/api/agent/${this.config.sessionId}/messages`
+    );
+
+    for (const msg of messages) {
+      // Inject into Claude Code session as user message
+      const prefix = msg.source === 'github'
+        ? `[PR review from ${msg.sender}]`
+        : `[${msg.source} from ${msg.sender}]`;
+
+      await this.session.sendMessage(`${prefix}: ${msg.body}`);
+    }
+  }
+
+  private async handleShutdown() {
+    await this.session.sendMessage(
+      'URGENT: This session is being terminated. ' +
+      'Commit all work-in-progress NOW and push. ' +
+      'Run: git add -A && git commit -m "WIP: session terminated" && git push'
+    );
+    // Wait up to 90s for push
+    await this.session.waitForCompletion({ timeout: 90_000 });
+    process.exit(0);
+  }
 }
 ```
 
