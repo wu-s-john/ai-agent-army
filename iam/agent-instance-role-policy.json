@@ -1,0 +1,33 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadAgentSecrets",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": [
+        "arn:aws:secretsmanager:us-west-1:*:secret:agent/anthropic-key-*",
+        "arn:aws:secretsmanager:us-west-1:*:secret:agent/github-token-*"
+      ]
+    },
+    {
+      "Sid": "CloudWatchLogs",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:us-west-1:*:log-group:/agent-army/instances/*"
+    },
+    {
+      "Sid": "DescribeSelf",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeTags"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

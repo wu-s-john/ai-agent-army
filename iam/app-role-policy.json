@@ -1,0 +1,145 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "EC2AgentLifecycle",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:RunInstances",
+        "ec2:TerminateInstances",
+        "ec2:DescribeInstances",
+        "ec2:DescribeInstanceStatus",
+        "ec2:CreateTags",
+        "ec2:DescribeTags"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "us-west-1"
+        }
+      }
+    },
+    {
+      "Sid": "EC2RunInstancesConstraints",
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": "arn:aws:ec2:us-west-1:*:instance/*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:InstanceType": [
+            "t4g.medium",
+            "t4g.large",
+            "t4g.xlarge",
+            "c7g.2xlarge",
+            "mac2.metal",
+            "mac2-m2pro.metal"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "EC2NetworkAndStorage",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:RunInstances"
+      ],
+      "Resource": [
+        "arn:aws:ec2:us-west-1:*:subnet/*",
+        "arn:aws:ec2:us-west-1:*:security-group/*",
+        "arn:aws:ec2:us-west-1:*:volume/*",
+        "arn:aws:ec2:us-west-1:*:network-interface/*",
+        "arn:aws:ec2:us-west-1::image/*"
+      ]
+    },
+    {
+      "Sid": "EC2SpotRequests",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:RequestSpotInstances",
+        "ec2:CancelSpotInstanceRequests",
+        "ec2:DescribeSpotInstanceRequests"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "us-west-1"
+        }
+      }
+    },
+    {
+      "Sid": "DedicatedHostsForMac",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:AllocateHosts",
+        "ec2:ReleaseHosts",
+        "ec2:DescribeHosts",
+        "ec2:ModifyHosts"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "us-west-1"
+        }
+      }
+    },
+    {
+      "Sid": "EBSSnapshots",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateSnapshot",
+        "ec2:DeleteSnapshot",
+        "ec2:DescribeSnapshots",
+        "ec2:DescribeVolumes"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "us-west-1"
+        }
+      }
+    },
+    {
+      "Sid": "ReadAgentSecrets",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret"
+      ],
+      "Resource": "arn:aws:secretsmanager:us-west-1:*:secret:agent/*"
+    },
+    {
+      "Sid": "PassRoleToEC2",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::*:role/agent-instance-role",
+      "Condition": {
+        "StringEquals": {
+          "iam:PassedToService": "ec2.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "CloudWatchMonitoring",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:PutMetricData",
+        "cloudwatch:GetMetricData",
+        "cloudwatch:PutMetricAlarm",
+        "cloudwatch:DescribeAlarms"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CloudWatchLogs",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams",
+        "logs:GetLogEvents"
+      ],
+      "Resource": "arn:aws:logs:us-west-1:*:log-group:/agent-army/*"
+    }
+  ]
+}

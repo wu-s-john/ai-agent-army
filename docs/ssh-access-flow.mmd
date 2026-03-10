@@ -1,0 +1,11 @@
+sequenceDiagram
+    participant iPad as iPad (Blink + Tailscale)
+    participant DERP as Tailscale Coordination<br/>(or direct P2P)
+    participant TS as Pod Tailscale Sidecar
+    participant SSHD as Pod sshd :22
+
+    iPad->>DERP: Connect to workspace-1 (100.x.x.1)
+    DERP->>TS: Encrypted WireGuard tunnel
+    Note over DERP: Traffic is E2E encrypted<br/>DERP only relays if no direct path
+    TS->>SSHD: Forward to localhost:22
+    SSHD-->>iPad: SSH session (zsh + Rust + Claude Code)
