@@ -26,6 +26,24 @@ apt-get install -y \
   lld \
   zsh
 
+# ─── 1Password CLI (secret management) ───
+echo "=== Installing 1Password CLI ==="
+curl -sS https://downloads.1password.com/linux/keys/1password.asc | \
+  gpg --dearmor -o /usr/share/keyrings/1password.gpg
+echo "deb [arch=arm64 signed-by=/usr/share/keyrings/1password.gpg] \
+  https://downloads.1password.com/linux/debian/arm64 stable main" | \
+  tee /etc/apt/sources.list.d/1password.list
+apt-get update && apt-get install -y 1password-cli
+
+# ─── GitHub CLI ───
+echo "=== Installing GitHub CLI ==="
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
+  dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] \
+  https://cli.github.com/packages stable main" | \
+  tee /etc/apt/sources.list.d/github-cli.list
+apt-get update && apt-get install -y gh
+
 # ─── Rust ───
 echo "=== Installing Rust ==="
 sudo -u ubuntu bash -c 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y'
@@ -214,6 +232,8 @@ echo "Python:  $(python3 --version)"
 echo "Zellij:  $(zellij --version)"
 echo "Zed:     $(sudo -u ubuntu bash -c '~/.local/bin/zed --version 2>/dev/null || echo "installed"')"
 echo "Claude:  $(sudo -u ubuntu bash -c 'claude --version 2>/dev/null || echo "run claude to authenticate"')"
+echo "1Pass:   $(op --version)"
+echo "GH CLI:  $(gh --version | head -1)"
 echo ""
 echo "SSH in and run: zellij"
 echo "============================================"

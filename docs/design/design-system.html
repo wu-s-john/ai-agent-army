@@ -1,0 +1,538 @@
+<!-- Mission Control / NASA Ops — Full Design System Preview -->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  .mc-preview {
+    background: #0a0e17;
+    border-radius: 12px;
+    padding: 40px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: #e2e8f0;
+    margin: 20px 0;
+  }
+
+  .mc-preview h2 {
+    font-family: 'Space Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    color: #22c55e;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .mc-preview .tagline {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    color: #64748b;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 36px;
+  }
+
+  /* Section divider */
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: #22c55e;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #1e293b;
+  }
+
+  /* Color swatches */
+  .swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+    gap: 12px;
+    margin-bottom: 44px;
+  }
+
+  .swatch {
+    border-radius: 8px;
+    overflow: hidden;
+    background: #111827;
+    border: 1px solid #1e293b;
+    transition: transform 0.2s;
+  }
+
+  .swatch:hover { transform: translateY(-2px); }
+
+  .swatch-color {
+    height: 68px;
+    display: flex;
+    align-items: flex-end;
+    padding: 8px 10px;
+  }
+
+  .swatch-hex {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    background: rgba(0,0,0,0.4);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  .swatch-info { padding: 10px 12px; }
+
+  .swatch-name {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: #e2e8f0;
+  }
+
+  .swatch-role {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: #64748b;
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Typography samples */
+  .type-section { margin-bottom: 40px; }
+
+  .type-row {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    margin-bottom: 10px;
+  }
+
+  .type-size {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: #64748b;
+    width: 60px;
+    flex-shrink: 0;
+  }
+
+  .type-sample-space-mono { font-family: 'Space Mono', monospace; }
+  .type-sample-plex-sans { font-family: 'IBM Plex Sans', sans-serif; }
+  .type-sample-plex-mono { font-family: 'IBM Plex Mono', monospace; }
+
+  /* Component showcase */
+  .component-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 40px;
+  }
+
+  .comp-panel {
+    background: #111827;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .comp-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 16px;
+  }
+
+  /* Status pills */
+  .pill-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .pill-green { background: rgba(34,197,94,0.1); color: #22c55e; }
+  .pill-amber { background: rgba(245,158,11,0.1); color: #f59e0b; }
+  .pill-cyan { background: rgba(6,182,212,0.1); color: #06b6d4; }
+  .pill-red { background: rgba(239,68,68,0.1); color: #ef4444; }
+  .pill-gray { background: rgba(100,116,139,0.1); color: #64748b; }
+
+  .pill-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+
+  .pd-green { background: #22c55e; box-shadow: 0 0 6px #22c55e88; animation: blink 2s ease-in-out infinite; }
+  .pd-amber { background: #f59e0b; box-shadow: 0 0 6px #f59e0b88; }
+  .pd-cyan { background: #06b6d4; box-shadow: 0 0 6px #06b6d488; }
+  .pd-red { background: #ef4444; box-shadow: 0 0 6px #ef444488; animation: blink 1s ease-in-out infinite; }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Buttons */
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .demo-btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 7px 14px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+  }
+
+  .demo-btn-primary { background: #22c55e; color: #000; }
+  .demo-btn-secondary { background: transparent; color: #06b6d4; border: 1px solid rgba(6,182,212,0.3); }
+  .demo-btn-ghost { background: transparent; color: #64748b; border: 1px solid #1e293b; }
+  .demo-btn-danger { background: transparent; color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+
+  /* Progress bars */
+  .bar-track {
+    height: 6px;
+    background: #1e293b;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 14px;
+    margin-top: 6px;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+  }
+
+  .bf-green { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+  .bf-amber { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
+  .bf-cyan { background: #06b6d4; box-shadow: 0 0 6px #06b6d4; }
+  .bf-red { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+
+  .bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+  }
+
+  /* Metric cards mini */
+  .mini-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .mini-metric {
+    background: #0a0e17;
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mini-metric::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .mm-green::after { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
+  .mm-amber::after { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+  .mm-cyan::after { background: #06b6d4; box-shadow: 0 0 10px #06b6d4; }
+  .mm-white::after { background: #64748b; }
+
+  .mm-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+  }
+
+  .mm-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .mm-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: #64748b;
+    margin-top: 5px;
+  }
+
+  /* Scanline effect demo */
+  .scanline-demo {
+    position: relative;
+    background: #0a0e17;
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    padding: 16px;
+    margin-top: 16px;
+    overflow: hidden;
+  }
+
+  .scanline-demo::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.04) 2px,
+      rgba(0,0,0,0.04) 4px
+    );
+    pointer-events: none;
+    border-radius: 6px;
+  }
+
+  .scanline-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  .scanline-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .t-green { color: #22c55e; }
+  .t-amber { color: #f59e0b; }
+  .t-cyan { color: #06b6d4; }
+  .t-red { color: #ef4444; }
+  .t-dim { color: #64748b; }
+  .t-text { color: #e2e8f0; }
+
+  .cursor {
+    display: inline-block;
+    width: 8px; height: 14px;
+    background: #22c55e;
+    vertical-align: text-bottom;
+    animation: cursor-blink 1s step-end infinite;
+    box-shadow: 0 0 6px #22c55e;
+  }
+
+  @keyframes cursor-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+</style>
+
+<div class="mc-preview">
+  <h2>Mission Control</h2>
+  <p class="tagline">AI Agent Army — Design System Preview</p>
+
+  <!-- Color Palette -->
+  <div class="section-label">Color Palette</div>
+  <div class="swatch-grid">
+    <div class="swatch">
+      <div class="swatch-color" style="background:#0a0e17"><span class="swatch-hex">#0a0e17</span></div>
+      <div class="swatch-info"><div class="swatch-name">Deep Space</div><div class="swatch-role">Background</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#111827"><span class="swatch-hex">#111827</span></div>
+      <div class="swatch-info"><div class="swatch-name">Dark Navy</div><div class="swatch-role">Surfaces</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#1e293b"><span class="swatch-hex">#1e293b</span></div>
+      <div class="swatch-info"><div class="swatch-name">Slate</div><div class="swatch-role">Elevated / Borders</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#22c55e"><span class="swatch-hex">#22c55e</span></div>
+      <div class="swatch-info"><div class="swatch-name">Phosphor Green</div><div class="swatch-role">Primary / Active</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#f59e0b"><span class="swatch-hex">#f59e0b</span></div>
+      <div class="swatch-info"><div class="swatch-name">Amber</div><div class="swatch-role">Warning / Budget</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#06b6d4"><span class="swatch-hex">#06b6d4</span></div>
+      <div class="swatch-info"><div class="swatch-name">Cyan</div><div class="swatch-role">Info / Links</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#ef4444"><span class="swatch-hex">#ef4444</span></div>
+      <div class="swatch-info"><div class="swatch-name">Signal Red</div><div class="swatch-role">Error / Critical</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#e2e8f0"><span class="swatch-hex">#e2e8f0</span></div>
+      <div class="swatch-info"><div class="swatch-name">Cool White</div><div class="swatch-role">Primary Text</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#64748b"><span class="swatch-hex">#64748b</span></div>
+      <div class="swatch-info"><div class="swatch-name">Dim Gray</div><div class="swatch-role">Muted / Labels</div></div>
+    </div>
+  </div>
+
+  <!-- Typography -->
+  <div class="type-section">
+    <div class="section-label">Space Mono — Headers & Metrics</div>
+    <div class="type-row">
+      <span class="type-size">28px</span>
+      <span class="type-sample-space-mono" style="font-size:28px;font-weight:700;color:#22c55e">AGENT ARMY</span>
+    </div>
+    <div class="type-row">
+      <span class="type-size">20px</span>
+      <span class="type-sample-space-mono" style="font-size:20px;font-weight:700;color:#e2e8f0">Active Agents</span>
+    </div>
+    <div class="type-row">
+      <span class="type-size">13px</span>
+      <span class="type-sample-space-mono" style="font-size:13px;font-weight:700;color:#e2e8f0;text-transform:uppercase;letter-spacing:1px">Panel Header</span>
+    </div>
+    <div class="type-row">
+      <span class="type-size">32px</span>
+      <span class="type-sample-space-mono" style="font-size:32px;font-weight:700;color:#22c55e">4</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#64748b;margin-left:-8px">← metric value</span>
+    </div>
+  </div>
+
+  <div class="type-section">
+    <div class="section-label">IBM Plex Sans — Body & UI</div>
+    <div class="type-row">
+      <span class="type-size">15px</span>
+      <span class="type-sample-plex-sans" style="font-size:15px;color:#e2e8f0">Agent #7 is running code review on fix-login-validation branch</span>
+    </div>
+    <div class="type-row">
+      <span class="type-size">13px</span>
+      <span class="type-sample-plex-sans" style="font-size:13px;color:#e2e8f0">Fix login validation bug — queued 2m ago, routing to EC2</span>
+    </div>
+    <div class="type-row">
+      <span class="type-size">11px</span>
+      <span class="type-sample-plex-sans" style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px">Status · Resource · Duration · Cost</span>
+    </div>
+  </div>
+
+  <div class="type-section">
+    <div class="section-label">IBM Plex Mono — Data & Code</div>
+    <div class="type-row">
+      <span class="type-size">13px</span>
+      <span class="type-sample-plex-mono" style="font-size:13px;color:#06b6d4">ssh agent-7 -t "zellij attach agent-7-main"</span>
+    </div>
+    <div class="type-row">
+      <span class="type-size">12px</span>
+      <span class="type-sample-plex-mono" style="font-size:12px;color:#f59e0b">$4.72 / $10.00 daily budget</span>
+    </div>
+    <div class="type-row">
+      <span class="type-size">11px</span>
+      <span class="type-sample-plex-mono" style="font-size:11px;color:#64748b">100.64.0.12 · t4g.xlarge · us-east-1a</span>
+    </div>
+  </div>
+
+  <!-- Components -->
+  <div class="section-label" style="margin-top:48px">Components</div>
+  <div class="component-grid">
+
+    <!-- Status Pills -->
+    <div class="comp-panel">
+      <div class="comp-title">Status Indicators</div>
+      <div class="pill-row">
+        <span class="pill pill-green"><span class="pill-dot pd-green"></span> Running</span>
+        <span class="pill pill-amber"><span class="pill-dot pd-amber"></span> Planning</span>
+        <span class="pill pill-cyan"><span class="pill-dot pd-cyan"></span> Queued</span>
+      </div>
+      <div class="pill-row">
+        <span class="pill pill-red"><span class="pill-dot pd-red"></span> Error</span>
+        <span class="pill pill-gray">✓ Completed</span>
+        <span class="pill pill-gray">⏹ Cancelled</span>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="comp-panel">
+      <div class="comp-title">Actions</div>
+      <div class="btn-row">
+        <button class="demo-btn demo-btn-primary">⊕ Spawn</button>
+        <button class="demo-btn demo-btn-secondary">⎘ Copy SSH</button>
+        <button class="demo-btn demo-btn-ghost">Config</button>
+        <button class="demo-btn demo-btn-danger">⏹ Stop</button>
+      </div>
+    </div>
+
+    <!-- Progress Bars -->
+    <div class="comp-panel">
+      <div class="comp-title">Budget / Progress Bars</div>
+      <div class="bar-label"><span style="color:#64748b">Daily cap</span><span style="color:#f59e0b">$12.47 / $20</span></div>
+      <div class="bar-track"><div class="bar-fill bf-amber" style="width:62%"></div></div>
+      <div class="bar-label"><span style="color:#64748b">Weekly</span><span style="color:#e2e8f0">$61 / $140</span></div>
+      <div class="bar-track"><div class="bar-fill bf-green" style="width:44%"></div></div>
+      <div class="bar-label"><span style="color:#64748b">Global</span><span style="color:#e2e8f0">$61 / $500</span></div>
+      <div class="bar-track"><div class="bar-fill bf-green" style="width:12%"></div></div>
+    </div>
+
+    <!-- Metric Cards -->
+    <div class="comp-panel" style="padding:16px">
+      <div class="comp-title" style="padding-left:4px">Metric Cards</div>
+      <div class="mini-metrics">
+        <div class="mini-metric mm-green">
+          <div class="mm-label">Active Agents</div>
+          <div class="mm-value" style="color:#22c55e">4</div>
+          <div class="mm-sub">2 EC2 · 2 local</div>
+        </div>
+        <div class="mini-metric mm-amber">
+          <div class="mm-label">Queued Tasks</div>
+          <div class="mm-value" style="color:#f59e0b">7</div>
+          <div class="mm-sub">3 pending route</div>
+        </div>
+        <div class="mini-metric mm-cyan">
+          <div class="mm-label">Resources</div>
+          <div class="mm-value" style="color:#06b6d4">6</div>
+          <div class="mm-sub">4 EC2 · 2 devices</div>
+        </div>
+        <div class="mini-metric mm-white">
+          <div class="mm-label">Today's Spend</div>
+          <div class="mm-value" style="color:#e2e8f0">$12</div>
+          <div class="mm-sub" style="color:#f59e0b">62% of cap</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Terminal / Scanline Effect -->
+  <div style="margin-top:24px">
+    <div class="section-label">Terminal Output with Scanline Overlay</div>
+    <div class="scanline-demo">
+      <div class="scanline-text">
+        <div><span class="t-cyan">◈ Claude Code</span> <span class="t-dim">v1.2.4 · claude-opus-4-6</span></div>
+        <div><span class="t-dim">─────────────────────────────────────</span></div>
+        <div>&nbsp;</div>
+        <div><span style="color:#c4b5fd">Task:</span> <span class="t-text">Fix login validation bug (#DEV-847)</span></div>
+        <div><span class="t-dim">Branch: fix/login-validation-dev-847</span></div>
+        <div>&nbsp;</div>
+        <div><span class="t-green">✓</span> <span class="t-dim">Read src/auth/validators.ts (247 lines)</span></div>
+        <div><span class="t-green">✓</span> <span class="t-dim">Read src/middleware/auth.ts (89 lines)</span></div>
+        <div><span class="t-green">✓</span> <span class="t-dim">Read tests/auth/login.test.ts (134 lines)</span></div>
+        <div>&nbsp;</div>
+        <div><span class="t-amber">⚠</span> <span class="t-dim">Found: email regex allows invalid TLDs</span></div>
+        <div><span class="t-amber">⚠</span> <span class="t-dim">Found: password check skips trim()</span></div>
+        <div>&nbsp;</div>
+        <div><span class="t-green">✓</span> <span class="t-dim">Patched validateEmail() — RFC 5321</span></div>
+        <div><span class="t-cyan">→ Running</span> <span class="t-dim">tests...</span><span class="cursor"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
