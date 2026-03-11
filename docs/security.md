@@ -45,6 +45,285 @@ A single GitHub Personal Access Token (or GitHub App installation token) with `r
 
 See [github.md](github.md) for details.
 
+## Generating Auth Secrets
+
+Generate high-entropy tokens for API authentication:
+
+```bash
+openssl rand -hex 32   # → ADMIN_API_KEY
+openssl rand -hex 32   # → WORKER_AUTH_TOKEN
+```
+
+Store each token in both Vercel env vars and the 1Password "Agent Army" vault.
+
+| Env var | Where it's set | Purpose |
+|---|---|---|
+| `ADMIN_API_KEY` | Vercel env var | Dashboard API auth |
+| `WORKER_AUTH_TOKEN` | Vercel env var + worker `.env` | Worker daemon auth |
+| `LINEAR_WEBHOOK_SECRET` | Vercel env var | Linear webhook signature verification |
+| `GITHUB_WEBHOOK_SECRET` | Vercel env var | GitHub webhook signature verification |
+| `SLACK_SIGNING_SECRET` | Vercel env var | Slack request verification |
+
+## Webhook Signature Verification
+
+All inbound webhooks are verified using HMAC-SHA256 signatures before processing. Each provider sends a signature header that we validate against a shared secret.
+
+### Linear
+
+Linear sends a `linear-signature` header containing the HMAC-SHA256 hex digest of the request body.
+
+```typescript
+// app/api/webhooks/linear/route.ts
+import crypto from 'crypto';
+
+export async function POST(req: Request) {
+  const body = await req.text();
+  const signature = req.headers.get('linear-signature');
+
+  if (!signature) {
+    return Response.json({ error: 'missing signature' }, { status: 401 });
+  }
+
+  const expected = crypto
+    .createHmac('sha256', process.env.LINEAR_WEBHOOK_SECRET!)
+    .update(body)
+    .digest('hex');
+
+  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+    return Response.json({ error: 'invalid signature' }, { status: 401 });
+  }
+
+  const payload = JSON.parse(body);
+  // ... handle webhook
+}
+```
+
+### GitHub
+
+GitHub sends an `x-hub-signature-256` header with a `sha256=` prefix.
+
+```typescript
+// app/api/webhooks/github/route.ts
+import crypto from 'crypto';
+
+export async function POST(req: Request) {
+  const body = await req.text();
+  const signature = req.headers.get('x-hub-signature-256');
+
+  if (!signature) {
+    return Response.json({ error: 'missing signature' }, { status: 401 });
+  }
+
+  const expected = 'sha256=' + crypto
+    .createHmac('sha256', process.env.GITHUB_WEBHOOK_SECRET!)
+    .update(body)
+    .digest('hex');
+
+  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+    return Response.json({ error: 'invalid signature' }, { status: 401 });
+  }
+
+  const payload = JSON.parse(body);
+  // ... handle webhook
+}
+```
+
+### Slack
+
+Slack sends `x-slack-request-timestamp` and `x-slack-signature` headers. The signature covers `v0:{timestamp}:{body}`. Requests older than 5 minutes are rejected to prevent replay attacks.
+
+```typescript
+// app/api/slack/commands/route.ts (same pattern for events, interactions)
+import crypto from 'crypto';
+
+export async function POST(req: Request) {
+  const body = await req.text();
+  const timestamp = req.headers.get('x-slack-request-timestamp');
+  const signature = req.headers.get('x-slack-signature');
+
+  if (!timestamp || !signature) {
+    return Response.json({ error: 'missing headers' }, { status: 401 });
+  }
+
+  // Reject requests older than 5 minutes (replay attack prevention)
+  const age = Math.abs(Date.now() / 1000 - parseInt(timestamp));
+  if (age > 300) {
+    return Response.json({ error: 'request too old' }, { status: 401 });
+  }
+
+  const baseString = `v0:${timestamp}:${body}`;
+  const expected = 'v0=' + crypto
+    .createHmac('sha256', process.env.SLACK_SIGNING_SECRET!)
+    .update(baseString)
+    .digest('hex');
+
+  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+    return Response.json({ error: 'invalid signature' }, { status: 401 });
+  }
+
+  const payload = new URLSearchParams(body);
+  // ... handle command
+}
+```
+
+## Vercel Deployment Protection
+
+The dashboard UI and all non-API routes are protected by Vercel's built-in Deployment Protection.
+
+### Setup
+
+1. Vercel dashboard → **Settings → Deployment Protection**
+2. Enable **Standard Protection**
+3. Set a password (shared with anyone who needs dashboard access)
+
+### Bypassing for machine-to-machine routes
+
+Webhook and API routes need to bypass Deployment Protection since they're called by external services, not browsers. Add to `vercel.json`:
+
+```json
+{
+  "protectionBypass": [
+    { "path": "/api/webhooks/linear", "scope": "automation" },
+    { "path": "/api/webhooks/github", "scope": "automation" },
+    { "path": "/api/agent/*", "scope": "automation" },
+    { "path": "/api/worker/*", "scope": "automation" },
+    { "path": "/api/slack/*", "scope": "automation" }
+  ]
+}
+```
+
+Bypassed routes are still secured by their own auth — webhook signature verification in route handlers, bearer tokens in middleware.
+
+## API Endpoint Authentication
+
+Every API endpoint is authenticated. The auth method varies by route type:
+
+| Route | Auth method | Verified in |
+|---|---|---|
+| `/api/webhooks/linear` | Linear HMAC signature | Route handler |
+| `/api/webhooks/github` | GitHub HMAC signature | Route handler |
+| `/api/slack/*` | Slack signing secret | Route handler |
+| `/api/agent/*` | Per-session callback token | Middleware + route handler |
+| `/api/worker/*` | Worker auth token | Middleware |
+| Dashboard UI + API | Vercel Deployment Protection | Vercel |
+
+### Middleware
+
+A Next.js middleware handles bearer token checks for agent and worker routes. Webhook and Slack routes pass through to their route handlers (which verify signatures).
+
+```typescript
+// middleware.ts
+import { NextRequest, NextResponse } from 'next/server';
+
+export const config = {
+  matcher: '/api/:path*',
+};
+
+export async function middleware(req: NextRequest) {
+  const path = req.nextUrl.pathname;
+
+  // Webhooks + Slack: signature verified in route handlers, let through
+  if (path.startsWith('/api/webhooks/') || path.startsWith('/api/slack/')) {
+    return NextResponse.next();
+  }
+
+  // Agent callbacks: require bearer token (DB validation in route handler)
+  if (path.startsWith('/api/agent/')) {
+    const token = req.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    }
+    // Token is present — route handler validates against claude_sessions.callback_token
+    return NextResponse.next();
+  }
+
+  // Worker endpoints: require worker auth token
+  if (path.startsWith('/api/worker/')) {
+    const token = req.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token || token !== process.env.WORKER_AUTH_TOKEN) {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    }
+    return NextResponse.next();
+  }
+
+  // All other /api/* routes: Vercel Deployment Protection handles auth
+  return NextResponse.next();
+}
+```
+
+## Per-Session Callback Tokens
+
+Each agent session gets a unique callback token, generated when a task is assigned. This ensures agents can only report progress on their own task — a compromised agent can't impersonate another.
+
+### Flow
+
+1. **App generates token** at task assignment: `crypto.randomBytes(32).toString('hex')`
+2. **Token stored** in `claude_sessions.callback_token` (unique index)
+3. **Token delivered** to the agent:
+   - **EC2**: written to SSM Parameter Store, read by bootstrap script
+   - **Worker**: included in the `/api/worker/poll` response
+4. **Agent includes token** as `Authorization: Bearer {token}` on all callbacks
+5. **Route handler validates** token against DB and checks task ID matches
+
+### Token delivery — EC2 (via SSM)
+
+```typescript
+// App writes token to SSM before launching the instance
+await ssm.putParameter({
+  Name: `/agent-army/tasks/${task.id}/callback-token`,
+  Value: callbackToken,
+  Type: 'SecureString',
+  Overwrite: true,
+});
+```
+
+```bash
+# In startup.sh on the EC2 instance
+CALLBACK_TOKEN=$(aws ssm get-parameter \
+  --name "/agent-army/tasks/${TASK_ID}/callback-token" \
+  --with-decryption \
+  --query "Parameter.Value" \
+  --output text)
+
+agent --task-id "$TASK_ID" --callback-token "$CALLBACK_TOKEN"
+```
+
+### Token delivery — worker (via poll response)
+
+```json
+// GET /api/worker/poll response includes the token
+{
+  "tasks": [{
+    "id": 42,
+    "title": "Fix login bug",
+    "callbackToken": "a1b2c3d4...",
+    // ... other task fields
+  }]
+}
+```
+
+### Token validation in route handler
+
+```typescript
+// app/api/agent/progress/route.ts
+export async function POST(req: Request) {
+  const token = req.headers.get('authorization')?.replace('Bearer ', '');
+
+  const session = await db.claude_sessions.findByCallbackToken(token);
+  if (!session) {
+    return Response.json({ error: 'invalid token' }, { status: 401 });
+  }
+
+  // Verify taskId matches the session
+  const body = await req.json();
+  if (body.taskId !== session.task_id) {
+    return Response.json({ error: 'task mismatch' }, { status: 403 });
+  }
+
+  // ... process progress update
+}
+```
+
 ## Tailscale ACLs
 
 Network access is controlled by Tailscale ACL policy:
@@ -74,6 +353,59 @@ See [tailscale.md](tailscale.md) for full ACL policy.
 - **No inbound connections** from the worker daemon
 - Worker only makes outbound HTTP requests to the app
 - SSH access via Tailscale (same as EC2)
+
+## IMDSv2 Enforcement
+
+EC2 instances must use IMDSv2 (Instance Metadata Service v2), which requires a session token for metadata requests. This prevents SSRF attacks from reaching the metadata endpoint — an attacker would need to make two separate requests (PUT to get a token, then GET with the token), which standard SSRF payloads can't do.
+
+All `RunInstances` calls include:
+
+```typescript
+await ec2.runInstances({
+  // ... existing params ...
+  MetadataOptions: {
+    HttpTokens: 'required',        // IMDSv2 only (no IMDSv1 fallback)
+    HttpPutResponseHopLimit: 1,    // Token can't traverse network hops
+    HttpEndpoint: 'enabled',       // Metadata service is on
+  },
+});
+```
+
+`HttpPutResponseHopLimit: 1` ensures the token request can't be forwarded through a proxy or container — it must originate from the instance itself.
+
+## 1Password SA Token via SSM
+
+### Problem
+
+EC2 user-data is readable by any process on the instance via the metadata endpoint (`http://169.254.169.254/latest/user-data`). Storing the 1Password service account token in user-data exposes it to any code running on the instance.
+
+### Solution
+
+Store the token in AWS Systems Manager Parameter Store as a `SecureString` (encrypted with KMS). The instance's IAM role grants read access.
+
+**One-time setup:**
+
+```bash
+aws ssm put-parameter \
+  --name "/agent-army/op-sa-token" \
+  --value "ops_xxxxxxxx" \
+  --type SecureString \
+  --region us-west-1
+```
+
+**Updated bootstrap.sh:**
+
+```bash
+# Pull 1Password SA token from SSM (not user-data)
+export OP_SERVICE_ACCOUNT_TOKEN=$(aws ssm get-parameter \
+  --name "/agent-army/op-sa-token" \
+  --with-decryption \
+  --query "Parameter.Value" \
+  --output text \
+  --region us-west-1)
+```
+
+Only the agent instance role can read `/agent-army/*` parameters. See `iam/agent-instance-role-policy.json` for the `ReadSSMParams` statement.
 
 ## Budget Caps
 
@@ -305,6 +637,67 @@ The IAM policy (`iam/app-role-policy.json`) restricts which instance types the a
 ```
 
 Even if the app code has a bug, AWS will deny launching unauthorized instance types.
+
+## IAM Policy Hardening
+
+Three additional IAM guardrails beyond instance type constraints:
+
+### Fix PassRole wildcard
+
+The `iam:PassRole` statement originally used a wildcard account ID (`::*:`). Fixed to use the actual account ID:
+
+```json
+// BEFORE (too broad)
+"Resource": "arn:aws:iam::*:role/agent-instance-role"
+
+// AFTER (scoped to our account)
+"Resource": "arn:aws:iam::ACCOUNT_ID:role/agent-instance-role"
+```
+
+Replace `ACCOUNT_ID` with your actual AWS account ID (`aws sts get-caller-identity --query Account --output text`).
+
+### Tag-based EC2 termination
+
+`TerminateInstances` is split from the general EC2 lifecycle statement and requires the `project=agent-army` tag on the target instance:
+
+```json
+{
+  "Sid": "EC2TerminateAgentsOnly",
+  "Effect": "Allow",
+  "Action": "ec2:TerminateInstances",
+  "Resource": "*",
+  "Condition": {
+    "StringEquals": {
+      "aws:RequestedRegion": "us-west-1",
+      "ec2:ResourceTag/project": "agent-army"
+    }
+  }
+}
+```
+
+This prevents the app from terminating instances it didn't create.
+
+### Deny untagged launches
+
+A `Deny` statement prevents launching instances without the `project=agent-army` tag:
+
+```json
+{
+  "Sid": "DenyUntaggedLaunches",
+  "Effect": "Deny",
+  "Action": "ec2:RunInstances",
+  "Resource": "arn:aws:ec2:us-west-1:*:instance/*",
+  "Condition": {
+    "StringNotEquals": {
+      "aws:RequestTag/project": "agent-army"
+    }
+  }
+}
+```
+
+This ensures every instance is tagged for cost tracking and lifecycle management.
+
+See `iam/app-role-policy.json` for the full policy.
 
 ## Region Lock
 

@@ -42,6 +42,34 @@ agent-sg:
 
 Agents don't need inbound rules because Tailscale handles connectivity via its encrypted mesh tunnel. The security group only needs to allow outbound traffic.
 
+## Resource IDs
+
+Provisioned infrastructure in `us-west-1b`:
+
+| Resource | ID | Notes |
+|---|---|---|
+| VPC | `vpc-0ccdc7559536714f2` | `10.0.0.0/16` |
+| Private subnet | `subnet-07c07f3137b79ed68` | `10.0.1.0/24`, us-west-1b — agents go here |
+| Public subnet | `subnet-0fd5bc75922dc0f7f` | `10.0.2.0/24`, us-west-1b — NAT Gateway only |
+| Internet Gateway | `igw-0efb465ecf2e79160` | Attached to VPC |
+| NAT Gateway | `nat-0c09a4c07d6afd4ef` | In public subnet, EIP `54.215.178.239` |
+| Elastic IP | `eipalloc-0e7e0fae1b5696958` | For NAT Gateway |
+| Private route table | `rtb-0de2462a69e3429d4` | `0.0.0.0/0` → NAT Gateway |
+| Public route table | `rtb-0c9502c391cadc321` | `0.0.0.0/0` → Internet Gateway |
+| Security group | `sg-072b72ae3cee797a7` | `agent-sg`: no inbound, all outbound |
+| Instance profile | `agent-instance-role` | For EC2 agent instances |
+
+When launching instances, always specify `SubnetId` and `SecurityGroupIds` to ensure agents land in the private subnet:
+
+```typescript
+await ec2.runInstances({
+  SubnetId: 'subnet-07c07f3137b79ed68',        // private subnet
+  SecurityGroupIds: ['sg-072b72ae3cee797a7'],   // agent-sg
+  IamInstanceProfile: { Name: 'agent-instance-role' },
+  // ... AMI, instance type, user-data, etc.
+});
+```
+
 ## Instance Types
 
 | Profile | Instance Type | vCPUs | RAM | Use Case | Spot? |

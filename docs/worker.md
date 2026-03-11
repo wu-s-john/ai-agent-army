@@ -222,7 +222,7 @@ async function executeTask(task: WorkerTask) {
   await startZellijSession(sessionName, workDir);
 
   // 4. Start agent wrapper (runs Claude Code via SDK)
-  const wrapper = new AgentWrapper({
+  const wrapper = new Agent({
     taskId: task.id,
     sessionId: task.sessionId,
     appUrl: APP_URL,
@@ -248,7 +248,7 @@ async function executeTask(task: WorkerTask) {
 ### Agent wrapper internals
 
 ```typescript
-class AgentWrapper {
+class Agent {
   private session: ClaudeCodeSession;
   private messagePoller: NodeJS.Timeout;
 
@@ -454,6 +454,7 @@ App cancels the device assignment and spawns an EC2 instance instead.
 - **Token generation**: tokens are created in the app dashboard, scoped to a specific device
 - **Secrets**: stored locally in `.env` — not pulled from AWS Secrets Manager
 - **No inbound connections**: worker only makes outbound HTTP requests
+- **Callback tokens**: agent callback endpoints (`/api/agent/*`) use per-session tokens. See [security.md](security.md#per-session-callback-tokens).
 - **Tailscale**: device is on the tailnet for SSH access, but the worker itself doesn't use Tailscale for communication
 
 ## CLI Commands

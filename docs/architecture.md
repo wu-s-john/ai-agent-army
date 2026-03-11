@@ -267,9 +267,11 @@ Offline handling: task queued → Slack notification → dispatched when device 
 
 Agents interact with GitHub using a Personal Access Token (or GitHub App installation token) with `repo` scope. This single token covers all git and GitHub operations. See [github.md](github.md) for full GitHub API usage.
 
+All endpoints are authenticated. See [security.md](security.md) for the full auth strategy (webhook signatures, bearer tokens, Vercel Deployment Protection).
+
 ## Agent Wrapper
 
-Agents don't run `claude` CLI directly. A thin TypeScript wrapper (`agent-wrapper`) manages the Claude Code session and handles all communication with the app. This solves three problems:
+Agents don't run `claude` CLI directly. A thin TypeScript wrapper (`agent`) manages the Claude Code session and handles all communication with the app. This solves three problems:
 
 1. **Feedback forwarding**: how Linear/Slack messages reach a running agent
 2. **Progress reporting**: how Claude Code output gets POSTed to the app

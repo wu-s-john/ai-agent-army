@@ -22,6 +22,12 @@
       "Resource": "arn:aws:logs:us-west-1:*:log-group:/agent-army/instances/*"
     },
     {
+      "Sid": "ReadSSMParams",
+      "Effect": "Allow",
+      "Action": "ssm:GetParameter",
+      "Resource": "arn:aws:ssm:us-west-1:ACCOUNT_ID:parameter/agent-army/*"
+    },
+    {
       "Sid": "DescribeSelf",
       "Effect": "Allow",
       "Action": [

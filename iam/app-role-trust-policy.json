@@ -6,8 +6,7 @@
       "Principal": {
         "Service": "ec2.amazonaws.com"
       },
-      "Action": "sts:AssumeRole",
-      "Comment": "If app runs on EC2. Change Principal to match your deployment (e.g., lambda.amazonaws.com for Lambda, or use IAM user for Vercel)"
+      "Action": "sts:AssumeRole"
     }
   ]
 }

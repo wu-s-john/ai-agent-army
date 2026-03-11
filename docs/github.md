@@ -246,7 +246,7 @@ await fetch(`https://api.github.com/repos/org/repo/statuses/${sha}`, {
 
 ## GitHub Webhooks
 
-The app subscribes to GitHub webhooks to route PR feedback to agents.
+The app subscribes to GitHub webhooks to route PR feedback to agents. All GitHub webhooks are verified using HMAC-SHA256. See [security.md](security.md#webhook-signature-verification) for implementation.
 
 ### Webhook events
 

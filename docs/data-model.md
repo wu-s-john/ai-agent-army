@@ -168,12 +168,14 @@ CREATE TABLE claude_sessions (
   token_input     BIGINT DEFAULT 0,
   token_output    BIGINT DEFAULT 0,
   api_cost        NUMERIC(10,4) DEFAULT 0,
+  callback_token  TEXT,                  -- per-session auth token for agent callbacks
   metadata        JSONB DEFAULT '{}'
 );
 
 CREATE INDEX idx_sessions_task ON claude_sessions(task_id);
 CREATE INDEX idx_sessions_resource ON claude_sessions(resource_id);
 CREATE INDEX idx_sessions_status ON claude_sessions(status);
+CREATE UNIQUE INDEX idx_sessions_callback_token ON claude_sessions(callback_token);
 ```
 
 ### agent_messages
