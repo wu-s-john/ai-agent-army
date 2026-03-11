@@ -38,10 +38,10 @@
       "Condition": {
         "StringEquals": {
           "ec2:InstanceType": [
-            "t4g.medium",
-            "t4g.large",
-            "t4g.xlarge",
-            "c7g.2xlarge",
+            "t3.medium",
+            "t3.large",
+            "t3.xlarge",
+            "c7i.2xlarge",
             "mac2.metal",
             "mac2-m2pro.metal"
           ]

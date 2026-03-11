@@ -30,8 +30,8 @@ apt-get install -y \
 echo "=== Installing 1Password CLI ==="
 curl -sS https://downloads.1password.com/linux/keys/1password.asc | \
   gpg --dearmor -o /usr/share/keyrings/1password.gpg
-echo "deb [arch=arm64 signed-by=/usr/share/keyrings/1password.gpg] \
-  https://downloads.1password.com/linux/debian/arm64 stable main" | \
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/1password.gpg] \
+  https://downloads.1password.com/linux/debian/amd64 stable main" | \
   tee /etc/apt/sources.list.d/1password.list
 apt-get update && apt-get install -y 1password-cli
 
@@ -54,6 +54,13 @@ echo "=== Installing Node.js ==="
 curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt-get install -y nodejs
 npm install -g typescript ts-node
+
+# ─── AWS CLI v2 ───
+echo "=== Installing AWS CLI ==="
+curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+unzip -q /tmp/awscliv2.zip -d /tmp
+/tmp/aws/install
+rm -rf /tmp/awscliv2.zip /tmp/aws
 
 # ─── Python ───
 echo "=== Installing Python ==="
