@@ -1,0 +1,146 @@
+# ─── Completion ───
+autoload -Uz compinit && compinit
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+zstyle ':completion:*' menu select
+
+# ─── Zsh plugins ───
+[[ -d ~/.zsh/zsh-autosuggestions ]] && source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
+[[ -d ~/.zsh/zsh-syntax-highlighting ]] && source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+# ─── History ───
+HISTFILE=~/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt SHARE_HISTORY
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_SPACE
+
+# ─── Key bindings ───
+bindkey -e
+bindkey '^[[A' history-beginning-search-backward
+bindkey '^[[B' history-beginning-search-forward
+
+# ─── PATH ───
+export PATH="$HOME/.local/bin:$PATH"
+
+# ─── Aliases — modern replacements ───
+alias ls='eza --icons --group-directories-first'
+alias ll='eza -la --icons --group-directories-first'
+alias lt='eza --tree --level=3 --icons'
+alias cat='bat --paging=never'
+alias grep='rg'
+alias find='fd'
+alias du='dust'
+
+# ─── Zellij ───
+alias zj='zellij'
+mux() {
+  if [[ -n "$1" ]]; then
+    zellij attach "$1" 2>/dev/null || zellij --session "$1"
+  else
+    zellij
+  fi
+}
+
+# ─── Git aliases ───
+alias gs='git status'
+alias gd='git diff'
+alias gl='git log --oneline -20'
+alias gp='git push'
+
+# ─── Zoxide (smart cd) ───
+eval "$(zoxide init zsh)"
+
+# ─── fzf ───
+source <(fzf --zsh) 2>/dev/null || [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --exclude .git'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_DEFAULT_OPTS='
+  --height=60%
+  --layout=reverse
+  --border=rounded
+  --prompt="🔍 "
+  --pointer="▶"
+  --marker="✓"
+  --preview-window=right:50%:wrap
+'
+
+# ─── Spotlight-style search functions ───
+
+# Ctrl+F — search files by name, preview contents, open in $EDITOR
+fzf-file-search() {
+  local file
+  file=$(fd --type f --hidden --exclude .git | fzf \
+    --preview 'bat --color=always --style=numbers --line-range=:200 {}' \
+    --header '📁 File search — Enter to open')
+  if [[ -n "$file" ]]; then
+    ${EDITOR:-zed} "$file"
+  fi
+  zle reset-prompt
+}
+zle -N fzf-file-search
+bindkey '^f' fzf-file-search
+
+# Ctrl+G — grep file contents, jump to line
+fzf-grep-search() {
+  local selection file line
+  selection=$(rg --color=always --line-number --no-heading '' 2>/dev/null | fzf \
+    --ansi \
+    --delimiter=: \
+    --preview 'bat --color=always --style=numbers --highlight-line {2} {1}' \
+    --preview-window='right:50%:+{2}-5' \
+    --header '🔎 Content search — type to filter')
+  if [[ -n "$selection" ]]; then
+    file=$(echo "$selection" | cut -d: -f1)
+    line=$(echo "$selection" | cut -d: -f2)
+    ${EDITOR:-zed} "$file:$line"
+  fi
+  zle reset-prompt
+}
+zle -N fzf-grep-search
+bindkey '^g' fzf-grep-search
+
+# Ctrl+P — jump to directory (zoxide + fzf)
+fzf-dir-search() {
+  local dir
+  dir=$(zoxide query -l 2>/dev/null | fzf \
+    --preview 'eza --icons --group-directories-first --color=always {}' \
+    --header '📂 Directory jump — recent & frequent dirs')
+  if [[ -n "$dir" ]]; then
+    cd "$dir"
+  fi
+  zle reset-prompt
+}
+zle -N fzf-dir-search
+bindkey '^p' fzf-dir-search
+
+# ─── Starship prompt ───
+eval "$(starship init zsh)"
+
+# ─── Aristotle ───
+alias aristotle='cd ~/code/aristotle && claude --resume'
+
+# ─── Secrets (from 1Password via op inject) ───
+[[ -f ~/.env-secrets.sh ]] && source ~/.env-secrets.sh
+
+# ─── OS-specific ───
+if [[ "$OSTYPE" == darwin* ]]; then
+  # Homebrew completions
+  if type brew &>/dev/null; then
+    FPATH="$(brew --prefix)/share/zsh/site-functions:$FPATH"
+  fi
+else
+  # Linux: Rust/Cargo env
+  source "$HOME/.cargo/env" 2>/dev/null
+
+  # Linux: pnpm
+  export PNPM_HOME="$HOME/.local/share/pnpm"
+  case ":$PATH:" in
+    *":$PNPM_HOME:"*) ;;
+    *) export PATH="$PNPM_HOME:$PATH" ;;
+  esac
+
+  # Linux: terminal color settings
+  export COLORTERM=truecolor
+  export TERM=xterm-256color
+fi

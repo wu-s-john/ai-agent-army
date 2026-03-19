@@ -1,0 +1,5 @@
+- You cannot change the eslint configs unless if you ask permission to. We do not want to weaken the restrictness of the errors caught be eslint
+- After implementing a big plan, please always use the compiler to typecheck your work
+- Render math using UTF-8 symbols (Σ, ∈, ∀, ×, ·, ≤, ≥, ≠, ∞, √, ², ³, ₀, ₁, etc.) instead of LaTeX notation
+- When you install a new plugin, add it to the `setup-plugins` skill to keep the canonical list current.
+- Use pnpm instead of npm or yarn for all Node.js package management (install, run scripts, etc.).

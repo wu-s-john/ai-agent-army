@@ -1,3 +1,11 @@
+# Symlink claude config + dotfiles
+setup:
+    ./setup.sh
+
+# Inject secrets from 1Password → ~/.env-secrets.sh
+secrets:
+    ./secrets.sh
+
 # SSH options for ephemeral EC2 instances
 ssh_opts := "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 skill_dir := "~/.claude/skills/ec2-compute"
