@@ -51,4 +51,10 @@ echo "Setting up zsh plugins..."
 clone_plugin "zsh-users/zsh-autosuggestions"
 clone_plugin "zsh-users/zsh-syntax-highlighting"
 
+# Zsh completions
+echo "Setting up zsh completions..."
+for f in "$REPO_DIR/dotfiles/zsh-completions"/_*; do
+  symlink "$f" "$ZSH_PLUGIN_DIR/$(basename "$f")"
+done
+
 echo "Done. Restart your shell for changes to take effect."

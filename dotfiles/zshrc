@@ -1,4 +1,9 @@
 # ─── Completion ───
+# Add custom completions and Homebrew to FPATH before compinit
+fpath=(~/.zsh $fpath)
+if [[ "$OSTYPE" == darwin* ]] && type brew &>/dev/null; then
+  fpath=($(brew --prefix)/share/zsh/site-functions $fpath)
+fi
 autoload -Uz compinit && compinit
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
 zstyle ':completion:*' menu select
@@ -125,10 +130,7 @@ alias aristotle='cd ~/code/aristotle && claude --resume'
 
 # ─── OS-specific ───
 if [[ "$OSTYPE" == darwin* ]]; then
-  # Homebrew completions
-  if type brew &>/dev/null; then
-    FPATH="$(brew --prefix)/share/zsh/site-functions:$FPATH"
-  fi
+  : # Homebrew completions handled above (before compinit)
 else
   # Linux: Rust/Cargo env
   source "$HOME/.cargo/env" 2>/dev/null
