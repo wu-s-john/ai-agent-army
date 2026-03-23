@@ -57,4 +57,7 @@ for f in "$REPO_DIR/dotfiles/zsh-completions"/_*; do
   symlink "$f" "$ZSH_PLUGIN_DIR/$(basename "$f")"
 done
 
+# Claude Code permissions
+"$REPO_DIR/claude_setup.sh"
+
 echo "Done. Restart your shell for changes to take effect."
