@@ -21,6 +21,9 @@ symlink() {
   fi
 }
 
+# CLI tools
+"$REPO_DIR/install_tools.sh"
+
 # Claude config
 mkdir -p "$CLAUDE_DIR"
 echo "Setting up ~/.claude symlinks..."
@@ -30,7 +33,54 @@ symlink "$REPO_DIR/claude/settings.json"  "$CLAUDE_DIR/settings.json"
 
 # Dotfiles
 echo "Setting up dotfile symlinks..."
-symlink "$REPO_DIR/dotfiles/zshrc"        "$HOME/.zshrc"
+if [ -L "$HOME/.zshrc" ] && [ "$(readlink "$HOME/.zshrc")" = "$REPO_DIR/dotfiles/zshrc" ]; then
+  echo "  .zshrc: already symlinked, skipping"
+elif [ -e "$HOME/.zshrc" ] || [ -L "$HOME/.zshrc" ]; then
+  echo ""
+  echo "  An existing .zshrc was found."
+  echo ""
+  echo "  [r] Replace (recommended) — backs up existing to .zshrc.bak"
+  echo "  [s] Source — appends a source line to your existing .zshrc"
+  echo "  [c] Claude merge — use Claude Code to intelligently merge the configs"
+  echo "  [n] Skip — leave your .zshrc unchanged"
+  echo ""
+  printf "  Your choice [r/s/c/n]: "
+  read -r choice
+  case "$choice" in
+    r|R|"")
+      mv "$HOME/.zshrc" "$HOME/.zshrc.bak"
+      ln -s "$REPO_DIR/dotfiles/zshrc" "$HOME/.zshrc"
+      echo "  .zshrc: replaced (backup at ~/.zshrc.bak)"
+      ;;
+    s|S)
+      SOURCE_LINE="source \"$REPO_DIR/dotfiles/zshrc\""
+      if grep -qF "$SOURCE_LINE" "$HOME/.zshrc" 2>/dev/null; then
+        echo "  .zshrc: source line already present, skipping"
+      else
+        echo "" >> "$HOME/.zshrc"
+        echo "# Added by ai-agent-army setup" >> "$HOME/.zshrc"
+        echo "$SOURCE_LINE" >> "$HOME/.zshrc"
+        echo "  .zshrc: source line appended"
+      fi
+      ;;
+    c|C)
+      echo "  .zshrc: skipping for now"
+      echo ""
+      echo "  Run this after setup to merge with Claude:"
+      echo "    claude \"Merge $REPO_DIR/dotfiles/zshrc into ~/.zshrc — deduplicate, preserve my customizations, prefer the repo config for any conflicts\""
+      echo ""
+      ;;
+    n|N)
+      echo "  .zshrc: skipped"
+      ;;
+    *)
+      echo "  .zshrc: unrecognized choice, skipping"
+      ;;
+  esac
+else
+  ln -s "$REPO_DIR/dotfiles/zshrc" "$HOME/.zshrc"
+  echo "  .zshrc: symlinked"
+fi
 
 # Zsh plugins
 ZSH_PLUGIN_DIR="$HOME/.zsh"
