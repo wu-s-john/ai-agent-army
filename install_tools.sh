@@ -14,6 +14,14 @@ BREW_TOOLS=(
   fzf
   starship
   jq
+  just
+  uv
+)
+
+BREW_CASKS=(
+  codex
+  ghostty
+  tailscale
 )
 
 install_macos() {
@@ -29,6 +37,16 @@ install_macos() {
     else
       brew install "$tool"
       echo "  $tool: installed"
+    fi
+  done
+
+  echo "Installing cask apps via Homebrew..."
+  for cask in "${BREW_CASKS[@]}"; do
+    if brew list --cask "$cask" &>/dev/null; then
+      echo "  $cask: already installed, skipping"
+    else
+      brew install --cask "$cask"
+      echo "  $cask: installed"
     fi
   done
 }
@@ -105,6 +123,30 @@ install_linux() {
     curl -sS https://starship.rs/install.sh | sh -s -- -y
     echo "  starship: installed"
   fi
+
+  # Ghostty (snap)
+  if command -v ghostty &>/dev/null; then
+    echo "  ghostty: already installed, skipping"
+  else
+    sudo snap install ghostty --classic
+    echo "  ghostty: installed"
+  fi
+
+  # Tailscale (official install script)
+  if command -v tailscale &>/dev/null; then
+    echo "  tailscale: already installed, skipping"
+  else
+    curl -fsSL https://tailscale.com/install.sh | sh
+    echo "  tailscale: installed"
+  fi
+
+  # uv (Python package manager)
+  if command -v uv &>/dev/null; then
+    echo "  uv: already installed, skipping"
+  else
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    echo "  uv: installed"
+  fi
 }
 
 # ─── Main ───
@@ -114,4 +156,52 @@ if [[ "$OSTYPE" == darwin* ]]; then
 else
   install_linux
 fi
+
+# ─── Codex config (model + MCP servers) ───
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CODEX_CFG="$SCRIPT_DIR/dotfiles/codex/config.toml"
+
+if [[ -f "$CODEX_CFG" ]]; then
+  mkdir -p ~/.codex
+  ln -sf "$CODEX_CFG" "$HOME/.codex/config.toml"
+  echo "Symlinked ~/.codex/config.toml -> $CODEX_CFG"
+fi
+
+# ─── Shared skills (Claude Code + Codex) ───
+SKILLS_SRC="$SCRIPT_DIR/dotfiles/skills"
+
+if [[ -d "$SKILLS_SRC" ]]; then
+  echo "Symlinking shared skills..."
+
+  # Claude Code
+  mkdir -p ~/.claude/skills
+  for skill in "$SKILLS_SRC"/*/; do
+    name="$(basename "$skill")"
+    ln -sfn "$skill" "$HOME/.claude/skills/$name"
+    echo "  ~/.claude/skills/$name -> $skill"
+  done
+  # Symlink standalone reference files
+  for file in "$SKILLS_SRC"/*.md; do
+    [[ -f "$file" ]] || continue
+    ln -sf "$file" "$HOME/.claude/skills/$(basename "$file")"
+  done
+
+  # Codex (skip .system — that's managed by Codex itself)
+  mkdir -p ~/.codex/skills
+  for skill in "$SKILLS_SRC"/*/; do
+    name="$(basename "$skill")"
+    ln -sfn "$skill" "$HOME/.codex/skills/$name"
+    echo "  ~/.codex/skills/$name -> $skill"
+  done
+fi
+
+# Install Python via uv
+echo "Setting up Python via uv..."
+if command -v uv &>/dev/null; then
+  uv python install
+  echo "  python: installed via uv"
+else
+  echo "  WARNING: uv not found, skipping Python install"
+fi
+
 echo "Done."

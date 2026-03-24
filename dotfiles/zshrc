@@ -28,6 +28,16 @@ bindkey '^[[B' history-beginning-search-forward
 # ─── PATH ───
 export PATH="$HOME/.local/bin:$PATH"
 
+# ─── Python (uv-managed) ───
+if command -v uv &>/dev/null; then
+  UV_PYTHON="$(uv python find 2>/dev/null)"
+  if [[ -n "$UV_PYTHON" ]]; then
+    ln -sf "$UV_PYTHON" "$HOME/.local/bin/python3"
+    ln -sf "$UV_PYTHON" "$HOME/.local/bin/python"
+  fi
+  unset UV_PYTHON
+fi
+
 # ─── Aliases — modern replacements ───
 alias ls='eza --icons --group-directories-first'
 alias ll='eza -la --icons --group-directories-first'
