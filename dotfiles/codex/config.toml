@@ -1,5 +1,7 @@
 model = "gpt-5.4"
 model_reasoning_effort = "xhigh"
+plan_mode_reasoning_effort = "xhigh"
+approvals_reviewer = "user"
 
 [mcp_servers.notion]
 url = "https://mcp.notion.com/mcp"
@@ -11,4 +13,7 @@ url = "https://mcp.linear.app/mcp"
 "gpt-5.3-codex" = "gpt-5.4"
 
 [projects."/Users/johnwu/code/zk/legit-poker"]
+trust_level = "trusted"
+
+[projects."/Users/johnwu/code/zk/Spartan2"]
 trust_level = "trusted"

@@ -16,6 +16,8 @@ BREW_TOOLS=(
   jq
   just
   uv
+  syncthing
+  node
 )
 
 BREW_CASKS=(
@@ -40,6 +42,12 @@ install_macos() {
     fi
   done
 
+  # Enable pnpm via corepack (ships with Node)
+  echo "Enabling pnpm via corepack..."
+  sudo corepack enable
+  corepack prepare pnpm@latest --activate
+  echo "  pnpm: enabled"
+
   echo "Installing cask apps via Homebrew..."
   for cask in "${BREW_CASKS[@]}"; do
     if brew list --cask "$cask" &>/dev/null; then
@@ -62,6 +70,7 @@ install_linux() {
     [fd]="fd-find"
     [fzf]="fzf"
     [jq]="jq"
+    [syncthing]="syncthing"
   )
 
   for tool in "${!apt_map[@]}"; do
@@ -139,6 +148,21 @@ install_linux() {
     curl -fsSL https://tailscale.com/install.sh | sh
     echo "  tailscale: installed"
   fi
+
+  # Node.js + npm
+  if command -v node &>/dev/null; then
+    echo "  node: already installed, skipping"
+  else
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+    echo "  node: installed"
+  fi
+
+  # Enable pnpm via corepack (ships with Node)
+  echo "Enabling pnpm via corepack..."
+  corepack enable
+  corepack prepare pnpm@latest --activate
+  echo "  pnpm: enabled"
 
   # uv (Python package manager)
   if command -v uv &>/dev/null; then

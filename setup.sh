@@ -110,4 +110,12 @@ done
 # Claude Code permissions
 "$REPO_DIR/claude_setup.sh"
 
+# Syncthing (requires 1Password CLI to be signed in)
+if op whoami &>/dev/null; then
+  "$REPO_DIR/setup_syncthing.sh"
+else
+  echo "Skipping syncthing setup (1Password CLI not signed in)."
+  echo "  To set up later: eval \$(op signin) && ./setup_syncthing.sh"
+fi
+
 echo "Done. Restart your shell for changes to take effect."
