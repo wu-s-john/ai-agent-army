@@ -3,3 +3,4 @@
 - Render math using UTF-8 symbols (Σ, ∈, ∀, ×, ·, ≤, ≥, ≠, ∞, √, ², ³, ₀, ₁, etc.) instead of LaTeX notation
 - When you install a new plugin, add it to the `setup-plugins` skill to keep the canonical list current.
 - Use pnpm instead of npm or yarn for all Node.js package management (install, run scripts, etc.).
+- When working on a PR and pushing code, invoke @claude to review it by commenting on the PR
