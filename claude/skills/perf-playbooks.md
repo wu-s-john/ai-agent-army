@@ -1,1 +1,1 @@
-/Users/johnwu/code/ai-agent-army/dotfiles/skills/perf-playbooks.md
+/home/john-wu/code/ai-agent-army/dotfiles/skills/perf-playbooks.md

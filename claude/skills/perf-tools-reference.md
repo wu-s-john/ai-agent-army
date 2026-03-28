@@ -1,1 +1,1 @@
-/Users/johnwu/code/ai-agent-army/dotfiles/skills/perf-tools-reference.md
+/home/john-wu/code/ai-agent-army/dotfiles/skills/perf-tools-reference.md
