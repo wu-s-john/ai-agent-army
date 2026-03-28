@@ -2,6 +2,18 @@
 setup:
     ./setup.sh
 
+# Start local Supabase (Postgres + services in Docker)
+supabase-start:
+    supabase start
+
+# Stop local Supabase
+supabase-stop:
+    supabase stop
+
+# Show Supabase service status and URLs
+supabase-status:
+    supabase status
+
 # Inject secrets from 1Password → ~/.env-secrets.sh
 secrets:
     ./secrets.sh

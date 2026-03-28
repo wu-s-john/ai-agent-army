@@ -18,10 +18,12 @@ BREW_TOOLS=(
   uv
   syncthing
   node
+  supabase/tap/supabase
 )
 
 BREW_CASKS=(
   codex
+  docker
   ghostty
   tailscale
 )
@@ -163,6 +165,23 @@ install_linux() {
   corepack enable
   corepack prepare pnpm@latest --activate
   echo "  pnpm: enabled"
+
+  # Docker
+  if command -v docker &>/dev/null; then
+    echo "  docker: already installed, skipping"
+  else
+    curl -fsSL https://get.docker.com | sh
+    sudo usermod -aG docker "$USER"
+    echo "  docker: installed (log out and back in for group membership)"
+  fi
+
+  # Supabase CLI
+  if command -v supabase &>/dev/null; then
+    echo "  supabase: already installed, skipping"
+  else
+    curl -sSL https://raw.githubusercontent.com/supabase/cli/main/install.sh | sh
+    echo "  supabase: installed"
+  fi
 
   # uv (Python package manager)
   if command -v uv &>/dev/null; then
