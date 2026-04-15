@@ -1,0 +1,2 @@
+mouse_mode true
+copy_command "pbcopy"
