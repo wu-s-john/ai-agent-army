@@ -28,5 +28,10 @@
   "mcpServers": {},
   "feedbackSurveyState": {
     "lastShownTime": 1754077540198
+  },
+  "voiceEnabled": true,
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
   }
 }
