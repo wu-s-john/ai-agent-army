@@ -3,6 +3,7 @@ set -e
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE_DIR="$HOME/.claude"
+ZELLIJ_RENDER="$REPO_DIR/dotfiles/zellij/render.sh"
 
 symlink() {
   local src="$1"
@@ -33,6 +34,10 @@ symlink "$REPO_DIR/claude/settings.json"  "$CLAUDE_DIR/settings.json"
 
 # Dotfiles
 echo "Setting up dotfile symlinks..."
+if [ -x "$ZELLIJ_RENDER" ]; then
+  "$ZELLIJ_RENDER"
+fi
+
 if [ -L "$HOME/.zshrc" ] && [ "$(readlink "$HOME/.zshrc")" = "$REPO_DIR/dotfiles/zshrc" ]; then
   echo "  .zshrc: already symlinked, skipping"
 elif [ -e "$HOME/.zshrc" ] || [ -L "$HOME/.zshrc" ]; then
@@ -81,6 +86,22 @@ else
   ln -s "$REPO_DIR/dotfiles/zshrc" "$HOME/.zshrc"
   echo "  .zshrc: symlinked"
 fi
+
+mkdir -p "$HOME/.config/zellij" "$HOME/.config/ghostty"
+case "$(uname -s)" in
+  Darwin)
+    symlink "$REPO_DIR/dotfiles/zellij/config.macos.kdl" "$HOME/.config/zellij/config.kdl"
+    symlink "$REPO_DIR/dotfiles/ghostty/config" "$HOME/.config/ghostty/config"
+    ;;
+  Linux)
+    symlink "$REPO_DIR/dotfiles/zellij/config.linux.kdl" "$HOME/.config/zellij/config.kdl"
+    echo "  ghostty: skipped (not a macOS host)"
+    ;;
+  *)
+    echo "  zellij: skipped (unsupported host OS for automatic config selection)"
+    echo "  ghostty: skipped (unsupported host OS)"
+    ;;
+esac
 
 # Zsh plugins
 ZSH_PLUGIN_DIR="$HOME/.zsh"

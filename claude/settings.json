@@ -1,18 +1,37 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "model": "sonnet",
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
     "asana@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
-    "chrome-devtools-mcp@claude-plugins-official": true
+    "chrome-devtools-mcp@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true,
+    "deploy-on-aws@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "codex@openai-codex": true,
+    "notion@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
+    }
   },
   "alwaysThinkingEnabled": true,
   "skipDangerousModePermissionPrompt": true,
   "mcpServers": {},
   "feedbackSurveyState": {
     "lastShownTime": 1754077540198
+  },
+  "voiceEnabled": true,
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
   }
 }
