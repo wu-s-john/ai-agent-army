@@ -13,7 +13,8 @@
     "deploy-on-aws@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true,
     "codex@openai-codex": true,
-    "notion@claude-plugins-official": true
+    "notion@claude-plugins-official": true,
+    "slack@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "openai-codex": {
@@ -24,14 +25,16 @@
     }
   },
   "alwaysThinkingEnabled": true,
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
+  },
   "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true,
+  "voiceEnabled": true,
   "mcpServers": {},
   "feedbackSurveyState": {
     "lastShownTime": 1754077540198
   },
-  "voiceEnabled": true,
-  "voice": {
-    "enabled": true,
-    "mode": "hold"
-  }
+  "effortLevel": "xhigh"
 }

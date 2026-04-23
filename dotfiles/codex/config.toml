@@ -30,6 +30,9 @@ approval_mode = "approve"
 [mcp_servers.chrome-devtools.tools.new_page]
 approval_mode = "approve"
 
+[mcp_servers.chrome-devtools.tools.click]
+approval_mode = "approve"
+
 [mcp_servers.trigger]
 command = "npx"
 args = [ "trigger.dev@4.0.4", "mcp", "--dev-only" ]
@@ -82,5 +85,16 @@ enabled = true
 [plugins."jam@openai-curated"]
 enabled = true
 
+[plugins."slack@openai-curated"]
+enabled = true
+
+[plugins."notion@openai-curated"]
+enabled = true
+
 [tui]
 alternate_screen = "auto"
+
+[marketplaces.openai-bundled]
+last_updated = "2026-04-22T20:49:37Z"
+source_type = "local"
+source = "/Users/johnwu/.codex/.tmp/bundled-marketplaces/openai-bundled"
