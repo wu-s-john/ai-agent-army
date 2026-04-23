@@ -3,6 +3,8 @@ set -e
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE_DIR="$HOME/.claude"
+CODEX_DIR="$HOME/.codex"
+SHARED_SKILLS_DIR="$HOME/.ai-agent-army/skills"
 ZELLIJ_RENDER="$REPO_DIR/dotfiles/zellij/render.sh"
 
 symlink() {
@@ -25,11 +27,12 @@ symlink() {
 # CLI tools
 "$REPO_DIR/install_tools.sh"
 
-# Claude config
-mkdir -p "$CLAUDE_DIR"
-echo "Setting up ~/.claude symlinks..."
+# Claude/Codex config
+mkdir -p "$CLAUDE_DIR" "$CODEX_DIR"
+echo "Setting up Claude/Codex symlinks..."
 symlink "$REPO_DIR/claude/CLAUDE.md"      "$CLAUDE_DIR/CLAUDE.md"
-symlink "$REPO_DIR/claude/skills"         "$CLAUDE_DIR/skills"
+symlink "$SHARED_SKILLS_DIR"              "$CLAUDE_DIR/skills"
+symlink "$SHARED_SKILLS_DIR"              "$CODEX_DIR/skills"
 symlink "$REPO_DIR/claude/settings.json"  "$CLAUDE_DIR/settings.json"
 
 # Dotfiles

@@ -203,6 +203,62 @@ fi
 # ─── Codex config (model + MCP servers) ───
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_CFG="$SCRIPT_DIR/dotfiles/codex/config.toml"
+REPO_SKILLS_SRC="$SCRIPT_DIR/claude/skills"
+SHARED_SKILLS_DIR="$HOME/.ai-agent-army/skills"
+
+symlink_path() {
+  local src="$1"
+  local dest="$2"
+  local name
+  name="$(basename "$dest")"
+
+  mkdir -p "$(dirname "$dest")"
+
+  if [[ -L "$dest" && "$(readlink "$dest")" = "$src" ]]; then
+    echo "  $dest: already symlinked, skipping"
+  elif [[ -L "$dest" || -e "$dest" ]]; then
+    mv "$dest" "${dest}.bak"
+    ln -s "$src" "$dest"
+    echo "  $name: symlinked (existing backed up to ${name}.bak)"
+  else
+    ln -s "$src" "$dest"
+    echo "  $name: symlinked"
+  fi
+}
+
+migrate_non_repo_skills() {
+  local source_dir="$1"
+  local source_label="$2"
+  local entry
+  local name
+  local target
+
+  [[ -d "$source_dir" ]] || return 0
+  [[ -L "$source_dir" ]] && return 0
+
+  mkdir -p "$SHARED_SKILLS_DIR"
+
+  for entry in "$source_dir"/.* "$source_dir"/*; do
+    [[ -e "$entry" || -L "$entry" ]] || continue
+
+    name="$(basename "$entry")"
+    [[ "$name" = "." || "$name" = ".." ]] && continue
+
+    # Repo-backed skills will be re-symlinked from claude/skills.
+    if [[ "$name" != ".system" ]] && ([[ -e "$REPO_SKILLS_SRC/$name" ]] || [[ -L "$REPO_SKILLS_SRC/$name" ]]); then
+      continue
+    fi
+
+    target="$SHARED_SKILLS_DIR/$name"
+    if [[ -e "$target" || -L "$target" ]]; then
+      echo "  Preserving existing shared skill entry: $name"
+      continue
+    fi
+
+    mv "$entry" "$target"
+    echo "  migrated $source_label/$name -> $target"
+  done
+}
 
 if [[ -f "$CODEX_CFG" ]]; then
   mkdir -p ~/.codex
@@ -210,32 +266,40 @@ if [[ -f "$CODEX_CFG" ]]; then
   echo "Symlinked ~/.codex/config.toml -> $CODEX_CFG"
 fi
 
-# ─── Shared skills (Claude Code + Codex) ───
-SKILLS_SRC="$SCRIPT_DIR/dotfiles/skills"
+# ─── Unified skills directory (Claude Code + Codex) ───
+#
+# Both ~/.claude/skills and ~/.codex/skills point at the same shared directory.
+# The shared directory is populated from repo-managed skills under claude/skills
+# and preserves Codex-managed entries like .system.
+if [[ -d "$REPO_SKILLS_SRC" ]]; then
+  echo "Building shared skills directory..."
+  mkdir -p "$SHARED_SKILLS_DIR"
 
-if [[ -d "$SKILLS_SRC" ]]; then
-  echo "Symlinking shared skills..."
+  migrate_non_repo_skills "$HOME/.claude/skills" "~/.claude/skills"
+  migrate_non_repo_skills "$HOME/.codex/skills" "~/.codex/skills"
 
-  # Claude Code
-  mkdir -p ~/.claude/skills
-  for skill in "$SKILLS_SRC"/*/; do
+  for skill in "$REPO_SKILLS_SRC"/*; do
+    [[ -e "$skill" || -L "$skill" ]] || continue
+
     name="$(basename "$skill")"
-    ln -sfn "$skill" "$HOME/.claude/skills/$name"
-    echo "  ~/.claude/skills/$name -> $skill"
-  done
-  # Symlink standalone reference files
-  for file in "$SKILLS_SRC"/*.md; do
-    [[ -f "$file" ]] || continue
-    ln -sf "$file" "$HOME/.claude/skills/$(basename "$file")"
+    target="$SHARED_SKILLS_DIR/$name"
+
+    if [[ -L "$target" && "$(readlink "$target")" = "$skill" ]]; then
+      echo "  $target: already linked, skipping"
+      continue
+    fi
+
+    if [[ -L "$target" || -e "$target" ]]; then
+      mv "$target" "${target}.bak"
+      echo "  Backed up conflicting shared skill entry: $target.bak"
+    fi
+
+    ln -s "$skill" "$target"
+    echo "  $target -> $skill"
   done
 
-  # Codex (skip .system — that's managed by Codex itself)
-  mkdir -p ~/.codex/skills
-  for skill in "$SKILLS_SRC"/*/; do
-    name="$(basename "$skill")"
-    ln -sfn "$skill" "$HOME/.codex/skills/$name"
-    echo "  ~/.codex/skills/$name -> $skill"
-  done
+  symlink_path "$SHARED_SKILLS_DIR" "$HOME/.claude/skills"
+  symlink_path "$SHARED_SKILLS_DIR" "$HOME/.codex/skills"
 fi
 
 # Install Python via uv
