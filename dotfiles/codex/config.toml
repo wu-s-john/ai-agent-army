@@ -9,6 +9,9 @@ url = "https://mcp.notion.com/mcp"
 [mcp_servers.linear]
 url = "https://mcp.linear.app/mcp"
 
+[notice]
+hide_full_access_warning = true
+
 [notice.model_migrations]
 "gpt-5.3-codex" = "gpt-5.4"
 
@@ -16,6 +19,9 @@ url = "https://mcp.linear.app/mcp"
 trust_level = "trusted"
 
 [projects."/Users/johnwu/code/zk/Spartan2"]
+trust_level = "trusted"
+
+[projects."/home/john-wu/code/legit-poker"]
 trust_level = "trusted"
 
 [plugins."github@openai-curated"]
