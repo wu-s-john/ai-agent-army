@@ -5,6 +5,9 @@ set -euo pipefail
 
 USER_HOME="/Users/ec2-user"
 BREW="/opt/homebrew/bin/brew"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+ZELLIJ_CFG_SRC="$REPO_DIR/dotfiles/zellij/config.macos.kdl"
 
 echo "=== Installing Homebrew ==="
 sudo -u ec2-user /bin/bash -c 'NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
@@ -117,23 +120,11 @@ chown ec2-user:staff "$USER_HOME/.zshrc"
 # ─── Zellij config ───
 echo "=== Configuring Zellij ==="
 mkdir -p "$USER_HOME/.config/zellij"
-cat > "$USER_HOME/.config/zellij/config.kdl" << 'ZELLIJ_CFG'
-// Auto-attach to existing session or create new one
-on_force_close "detach"
-default_shell "zsh"
-copy_on_select true
-scrollback_editor "zed"
-
-// OSC 52 clipboard passthrough (works over SSH with Blink)
-copy_command "cat"
-copy_clipboard "system"
-
-ui {
-    pane_frames {
-        rounded_corners true
-    }
-}
-ZELLIJ_CFG
+if [[ ! -f "$ZELLIJ_CFG_SRC" ]]; then
+  echo "Missing canonical Zellij config: $ZELLIJ_CFG_SRC" >&2
+  exit 1
+fi
+cp "$ZELLIJ_CFG_SRC" "$USER_HOME/.config/zellij/config.kdl"
 chown -R ec2-user:staff "$USER_HOME/.config/zellij"
 
 # ─── Starship config (minimal, fast) ───

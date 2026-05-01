@@ -3,18 +3,46 @@ model_reasoning_effort = "xhigh"
 plan_mode_reasoning_effort = "xhigh"
 approvals_reviewer = "user"
 
+[mcp_servers]
 [mcp_servers.notion]
 url = "https://mcp.notion.com/mcp"
 
 [mcp_servers.linear]
 url = "https://mcp.linear.app/mcp"
 
+[mcp_servers.chrome-devtools]
+command = "npx"
+args = [ "-y", "chrome-devtools-mcp@latest" ]
+
+[mcp_servers.chrome-devtools.tools]
+[mcp_servers.chrome-devtools.tools.take_screenshot]
+approval_mode = "approve"
+
+[mcp_servers.chrome-devtools.tools.take_snapshot]
+approval_mode = "approve"
+
+[mcp_servers.chrome-devtools.tools.navigate_page]
+approval_mode = "approve"
+
+[mcp_servers.chrome-devtools.tools.evaluate_script]
+approval_mode = "approve"
+
+[mcp_servers.chrome-devtools.tools.new_page]
+approval_mode = "approve"
+
+[mcp_servers.chrome-devtools.tools.click]
+approval_mode = "approve"
+
+[mcp_servers.trigger]
+command = "npx"
+args = [ "trigger.dev@4.0.4", "mcp", "--dev-only" ]
+
 [notice]
 hide_full_access_warning = true
-
 [notice.model_migrations]
 "gpt-5.3-codex" = "gpt-5.4"
 
+[projects]
 [projects."/Users/johnwu/code/zk/legit-poker"]
 trust_level = "trusted"
 
@@ -24,5 +52,53 @@ trust_level = "trusted"
 [projects."/home/john-wu/code/legit-poker"]
 trust_level = "trusted"
 
+[projects."/Users/johnwu/code/ai-agent-autoimprove"]
+trust_level = "trusted"
+
+[projects."/Users/johnwu/code/crypto-taxes"]
+trust_level = "trusted"
+
+[projects."/Users/johnwu/code/zk/jolt"]
+trust_level = "trusted"
+
+[projects."/Users/johnwu/code/2025-taxes"]
+trust_level = "trusted"
+
+[projects."/Users/johnwu/code/monad"]
+trust_level = "trusted"
+
+[projects."/Users/johnwu/code/zk/Nova"]
+trust_level = "trusted"
+
+[projects."/Users/johnwu/code/zk/Expander"]
+trust_level = "trusted"
+
+[projects."/Users/johnwu/Documents/resume/code"]
+trust_level = "trusted"
+
+[projects."/Users/johnwu/code/ai-agent-army"]
+trust_level = "trusted"
+
+[plugins]
 [plugins."github@openai-curated"]
 enabled = true
+
+[plugins."game-studio@openai-curated"]
+enabled = true
+
+[plugins."jam@openai-curated"]
+enabled = true
+
+[plugins."slack@openai-curated"]
+enabled = true
+
+[plugins."notion@openai-curated"]
+enabled = true
+
+[tui]
+alternate_screen = "auto"
+
+[marketplaces.openai-bundled]
+last_updated = "2026-04-22T20:49:37Z"
+source_type = "local"
+source = "/Users/johnwu/.codex/.tmp/bundled-marketplaces/openai-bundled"

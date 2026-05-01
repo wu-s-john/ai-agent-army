@@ -1,0 +1,3 @@
+# Copy terminal selection with Cmd+C when Ghostty has one.
+# If there is no Ghostty-owned selection, let the key fall through to Zellij.
+keybind = performable:super+c=copy_to_clipboard

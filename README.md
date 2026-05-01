@@ -12,11 +12,13 @@ git clone <this-repo> && cd <this-repo>
 This is idempotent — safe to run multiple times. The script will:
 
 1. Install CLI tools (via Homebrew on macOS, apt/cargo on Linux)
-2. Symlink Claude Code config (`~/.claude/CLAUDE.md`, skills, settings)
+2. Build one shared skills directory and symlink both `~/.claude/skills` and `~/.codex/skills` to it
 3. Set up your `.zshrc` (with options to replace, merge, or skip if one exists)
 4. Install zsh plugins (autosuggestions, syntax highlighting)
 5. Symlink zsh completions
 6. Configure Claude Code default permissions
+
+The shared skills directory lives at `~/.ai-agent-army/skills`. Repo-managed skills are linked from `claude/skills`, and Codex-managed entries such as `.system` are preserved there so both tools see the same custom skills.
 
 ## What gets installed
 
