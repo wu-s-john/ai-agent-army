@@ -166,6 +166,16 @@ install_linux() {
   corepack prepare pnpm@latest --activate
   echo "  pnpm: enabled"
 
+  # Codex CLI (via pnpm)
+  export PNPM_HOME="$HOME/.local/share/pnpm"
+  export PATH="$PNPM_HOME:$PATH"
+  if command -v codex &>/dev/null; then
+    echo "  codex: already installed, skipping"
+  else
+    pnpm install -g @openai/codex
+    echo "  codex: installed"
+  fi
+
   # Docker
   if command -v docker &>/dev/null; then
     echo "  docker: already installed, skipping"

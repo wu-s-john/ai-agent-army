@@ -38,6 +38,27 @@ if command -v uv &>/dev/null; then
   unset UV_PYTHON
 fi
 
+# ─── pnpm ───
+if [[ "$OSTYPE" == darwin* ]]; then
+  export PNPM_HOME="$HOME/Library/pnpm"
+else
+  export PNPM_HOME="$HOME/.local/share/pnpm"
+fi
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+
+# Redirect npm/yarn to pnpm. Bypass with 'command npm' or '\npm'.
+npm() {
+  echo "npm -> pnpm (use 'command npm' or '\\npm' to bypass)" >&2
+  pnpm "$@"
+}
+yarn() {
+  echo "yarn -> pnpm (use 'command yarn' or '\\yarn' to bypass)" >&2
+  pnpm "$@"
+}
+
 # ─── Aliases — modern replacements ───
 alias ls='eza --icons --group-directories-first'
 alias ll='eza -la --icons --group-directories-first'
@@ -145,22 +166,7 @@ else
   # Linux: Rust/Cargo env
   source "$HOME/.cargo/env" 2>/dev/null
 
-  # Linux: pnpm
-  export PNPM_HOME="$HOME/.local/share/pnpm"
-  case ":$PATH:" in
-    *":$PNPM_HOME:"*) ;;
-    *) export PATH="$PNPM_HOME:$PATH" ;;
-  esac
-
   # Linux: terminal color settings
   export COLORTERM=truecolor
   export TERM=xterm-256color
 fi
-
-# pnpm
-export PNPM_HOME="/Users/johnwu/Library/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
-# pnpm end
