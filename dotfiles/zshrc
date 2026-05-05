@@ -170,3 +170,6 @@ else
   export COLORTERM=truecolor
   export TERM=xterm-256color
 fi
+
+# OpenClaw Completion
+source "/home/john-wu/.openclaw/completions/openclaw.zsh"

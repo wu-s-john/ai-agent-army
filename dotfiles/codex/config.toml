@@ -82,6 +82,15 @@ trust_level = "trusted"
 [projects."/home/john-wu/code/Spartan2"]
 trust_level = "trusted"
 
+[projects."/home/john-wu"]
+trust_level = "trusted"
+
+[projects."/home/john-wu/code/azuki_tcg_simulator"]
+trust_level = "trusted"
+
+[projects."/home/john-wu/code/ai-agent-army"]
+trust_level = "trusted"
+
 [plugins]
 [plugins."github@openai-curated"]
 enabled = true
