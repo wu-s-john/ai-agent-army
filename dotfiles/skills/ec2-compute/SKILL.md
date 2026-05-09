@@ -1,6 +1,6 @@
 ---
 name: ec2-compute
-description: Launch and manage EC2 instances for remote compute. Reuse idle instances, run commands via SSH over Tailscale.
+description: Launch and manage AWS EC2 instances for remote compute, reuse idle instances, run commands via SSH over Tailscale, and handle AWS RDS PostgreSQL setup or connectivity workflows when users ask to create or debug managed Postgres databases.
 ---
 
 # EC2 Remote Compute
@@ -155,6 +155,10 @@ Pick based on the task:
 - Run `~/.claude/skills/ec2-compute/scripts/status.sh` to see total hourly cost
 - Mention cost when launching: "Launching t3.xlarge (~$0.17/hr)"
 - If multiple instances are idle, suggest terminating extras
+
+## RDS PostgreSQL
+
+When the user asks to create, migrate, connect to, or debug an AWS RDS PostgreSQL database, read `references/rds-postgres.md`. Treat RDS creation and security-group changes as live infrastructure mutations: show the account, region, and exact command first, and get explicit confirmation before running mutating AWS commands.
 
 ## Adding a new region
 

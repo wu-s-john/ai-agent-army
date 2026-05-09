@@ -164,6 +164,32 @@ struct VarIndex(usize);
 
 **Use `thiserror` for library errors, `anyhow` for applications**
 
+**Don't take caller-supplied error-context closures or string prefixes:**
+```rust
+// Avoid: caller threads a closure or string just to label errors
+pub fn convert_with_context<F: Fn(usize) -> String>(
+    v: &[T],
+    context: F,
+) -> Result<Vec<U>, MyError> { ... }
+
+convert_with_context(&az, |i| format!("Az layer {idx} index {i}"))?;
+convert_with_context(&bz, |i| format!("Bz layer {idx} index {i}"))?;
+
+// Prefer: include the locally-known fact (the index) in the error and
+// let the caller wrap the call in a `tracing` span for higher-level
+// context. Spans flow with logged errors; closures just stringify.
+pub fn convert(v: &[T]) -> Result<Vec<U>, MyError> { ... }
+
+let span = info_span!("accumulator_prep", layer = idx);
+let _enter = span.enter();
+info_span!("matrix", name = "Az").in_scope(|| convert(&az))?;
+```
+**Why:** caller-built error prefixes duplicate metadata that `tracing` spans
+already capture, add an extra generic param + `Sync` bound, and force two API
+surfaces (`foo` and `foo_with_context`) for one job. The function should expose
+only what *it* uniquely knows (the failing index); everything else
+(layer, matrix, request id) is span-shaped.
+
 ---
 
 ### API Design

@@ -1,7 +1,10 @@
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "xhigh"
 plan_mode_reasoning_effort = "xhigh"
-approvals_reviewer = "user"
+approvals_reviewer = "guardian_subagent"
+
+
+notify = ["/Users/johnwu/.codex/plugins/cache/openai-bundled/computer-use/1.0.758/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
 
 [mcp_servers]
 [mcp_servers.notion]
@@ -75,6 +78,27 @@ trust_level = "trusted"
 [projects."/Users/johnwu/code/ai-agent-army"]
 trust_level = "trusted"
 
+[projects."/Users/johnwu/code/ai-agent-learning"]
+trust_level = "trusted"
+
+[projects."/Users/johnwu/code/zk/LegitPoker-website"]
+trust_level = "trusted"
+
+[projects."/Users/johnwu/Downloads"]
+trust_level = "trusted"
+
+[projects."/Users/johnwu/Documents/New project"]
+trust_level = "trusted"
+
+[projects."/Users/johnwu/code/azuki_tcg_simulator"]
+trust_level = "trusted"
+
+[projects."/Users/johnwu/code/LeetCode-Ai-Assistant"]
+trust_level = "trusted"
+
+[projects."/Users/johnwu/code/zk/PLONK"]
+trust_level = "trusted"
+
 [plugins]
 [plugins."github@openai-curated"]
 enabled = true
@@ -91,10 +115,33 @@ enabled = true
 [plugins."notion@openai-curated"]
 enabled = true
 
+[plugins."computer-use@openai-bundled"]
+enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[plugins."browser-use@openai-bundled"]
+enabled = true
+
 [tui]
 alternate_screen = "auto"
 
+[tui.model_availability_nux]
+"gpt-5.5" = 4
+
 [marketplaces.openai-bundled]
-last_updated = "2026-04-22T20:49:37Z"
+last_updated = "2026-05-08T04:26:22Z"
 source_type = "local"
 source = "/Users/johnwu/.codex/.tmp/bundled-marketplaces/openai-bundled"
+
+[marketplaces.openai-primary-runtime]
+last_updated = "2026-05-08T05:16:37Z"
+source_type = "local"
+source = "/Users/johnwu/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"

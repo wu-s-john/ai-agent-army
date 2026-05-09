@@ -25,16 +25,19 @@
     }
   },
   "alwaysThinkingEnabled": true,
+  "effortLevel": "xhigh",
   "voice": {
     "enabled": true,
     "mode": "hold"
   },
   "skipDangerousModePermissionPrompt": true,
-  "skipAutoPermissionPrompt": true,
   "voiceEnabled": true,
   "mcpServers": {},
   "feedbackSurveyState": {
     "lastShownTime": 1754077540198
   },
-  "effortLevel": "xhigh"
+  "skipAutoPermissionPrompt": true,
+  "permissions": {
+    "defaultMode": "auto"
+  }
 }
