@@ -61,14 +61,19 @@ NODE_REPL_UNTRUSTED_ENV_ALLOWLIST = "BROWSER_USE_MARKETPLACE_NAME"
 SKY_CUA_SERVICE_PATH = "/Users/johnwu/.codex/.tmp/bundled-marketplaces/openai-bundled/plugins/computer-use/Codex Computer Use.app"
 
 [notice]
+hide_full_access_warning = true
 [notice.model_migrations]
 "gpt-5.3-codex" = "gpt-5.4"
+"gpt-5.4" = "gpt-5.5"
 
 [projects]
 [projects."/Users/johnwu/code/zk/legit-poker"]
 trust_level = "trusted"
 
 [projects."/Users/johnwu/code/zk/Spartan2"]
+trust_level = "trusted"
+
+[projects."/home/john-wu/code/legit-poker"]
 trust_level = "trusted"
 
 [projects."/Users/johnwu/code/ai-agent-autoimprove"]
@@ -96,36 +101,6 @@ trust_level = "trusted"
 trust_level = "trusted"
 
 [projects."/Users/johnwu/code/ai-agent-army"]
-trust_level = "trusted"
-
-[projects."/Users/johnwu/code/ai-agent-learning"]
-trust_level = "trusted"
-
-[projects."/Users/johnwu/code/zk/LegitPoker-website"]
-trust_level = "trusted"
-
-[projects."/Users/johnwu/Downloads"]
-trust_level = "trusted"
-
-[projects."/Users/johnwu/Documents/New project"]
-trust_level = "trusted"
-
-[projects."/Users/johnwu/code/azuki_tcg_simulator"]
-trust_level = "trusted"
-
-[projects."/Users/johnwu/code/LeetCode-Ai-Assistant"]
-trust_level = "trusted"
-
-[projects."/Users/johnwu/code/zk/PLONK"]
-trust_level = "trusted"
-
-[projects."/Users/johnwu/code/zk/zinc-plus"]
-trust_level = "trusted"
-
-[projects."/Users/johnwu"]
-trust_level = "trusted"
-
-[projects."/Users/johnwu/code/zk/cryptography-visualizations"]
 trust_level = "trusted"
 
 [plugins]
@@ -166,7 +141,7 @@ enabled = true
 enabled = true
 
 [tui]
-alternate_screen = "auto"
+alternate_screen = "always"
 
 [tui.model_availability_nux]
 "gpt-5.5" = 4

@@ -91,7 +91,7 @@ info "This device: $MY_NAME ($MY_DEVICE_ID)"
 # ─── Read or create the 1Password config ───
 info "Reading syncthing network config from 1Password..."
 if op item get "$OP_ITEM_NAME" --vault "$OP_VAULT" &>/dev/null; then
-  NETWORK_CONFIG="$(op item get "$OP_ITEM_NAME" --vault "$OP_VAULT" --fields notesPlain)"
+  NETWORK_CONFIG="$(op read "op://${OP_VAULT}/${OP_ITEM_NAME}/notesPlain")"
 else
   info "No existing config found. Creating new one..."
   NETWORK_CONFIG='{
@@ -109,9 +109,13 @@ else
   info "Created '$OP_ITEM_NAME' in 1Password ($OP_VAULT vault)"
 fi
 
+if ! printf '%s' "$NETWORK_CONFIG" | python3 -c "import sys, json; json.load(sys.stdin)" >/dev/null 2>&1; then
+  die "Syncthing network config in 1Password is not valid JSON (vault: $OP_VAULT, item: $OP_ITEM_NAME)"
+fi
+
 # ─── Register this device in the config ───
 info "Registering this device in network config..."
-UPDATED_CONFIG="$(echo "$NETWORK_CONFIG" | python3 -c "
+UPDATED_CONFIG="$(printf '%s' "$NETWORK_CONFIG" | python3 -c "
 import sys, json
 config = json.load(sys.stdin)
 config.setdefault('devices', {})
@@ -125,7 +129,7 @@ info "Updated network config in 1Password"
 
 # ─── Add all other devices from the config ───
 info "Adding remote devices from network config..."
-DEVICE_PAIRS="$(echo "$UPDATED_CONFIG" | python3 -c "
+DEVICE_PAIRS="$(printf '%s' "$UPDATED_CONFIG" | python3 -c "
 import sys, json
 config = json.load(sys.stdin)
 my_id = '$MY_DEVICE_ID'
@@ -155,7 +159,7 @@ info "Configuring sync-files folder..."
 FOLDER_ID="sync-files"
 
 # Build the device list for the folder (all devices including self)
-DEVICE_JSON="$(echo "$UPDATED_CONFIG" | python3 -c "
+DEVICE_JSON="$(printf '%s' "$UPDATED_CONFIG" | python3 -c "
 import sys, json
 config = json.load(sys.stdin)
 devices = [{'deviceID': dev_id, 'introducedBy': '', 'encryptionPassword': ''}
@@ -167,7 +171,7 @@ print(json.dumps(devices))
 if api GET "/rest/config/folders/${FOLDER_ID}" &>/dev/null; then
   # Update existing folder to include all devices
   EXISTING_FOLDER="$(api GET "/rest/config/folders/${FOLDER_ID}")"
-  UPDATED_FOLDER="$(echo "$EXISTING_FOLDER" | python3 -c "
+  UPDATED_FOLDER="$(printf '%s' "$EXISTING_FOLDER" | python3 -c "
 import sys, json
 folder = json.load(sys.stdin)
 new_devices = json.loads('${DEVICE_JSON}')
