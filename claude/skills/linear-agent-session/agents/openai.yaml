@@ -1,0 +1,13 @@
+interface:
+  display_name: "Linear Agent Session"
+  short_description: "Run Codex sessions from Linear issues"
+  default_prompt: "Use $linear-agent-session to start or resume a Codex task from a Linear issue."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "linear"
+      description: "Linear MCP server for issue reads, comments, and updates"
+      transport: "streamable_http"
+      url: "https://mcp.linear.app/mcp"
+policy:
+  allow_implicit_invocation: true
