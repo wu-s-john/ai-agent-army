@@ -1,5 +1,5 @@
-model = "gpt-5.4"
-model_reasoning_effort = "xhigh"
+model = "gpt-5.5"
+model_reasoning_effort = "medium"
 plan_mode_reasoning_effort = "xhigh"
 approvals_reviewer = "user"
 
@@ -41,6 +41,7 @@ args = [ "trigger.dev@4.0.4", "mcp", "--dev-only" ]
 hide_full_access_warning = true
 [notice.model_migrations]
 "gpt-5.3-codex" = "gpt-5.4"
+"gpt-5.4" = "gpt-5.5"
 
 [projects]
 [projects."/Users/johnwu/code/zk/legit-poker"]
@@ -91,6 +92,9 @@ trust_level = "trusted"
 [projects."/home/john-wu/code/ai-agent-army"]
 trust_level = "trusted"
 
+[projects."/home/john-wu/code/resume-code"]
+trust_level = "trusted"
+
 [plugins]
 [plugins."github@openai-curated"]
 enabled = true
@@ -109,6 +113,9 @@ enabled = true
 
 [tui]
 alternate_screen = "always"
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
 
 [marketplaces.openai-bundled]
 last_updated = "2026-04-22T20:49:37Z"
